@@ -6,7 +6,7 @@ from . import ascii
 AsciiBase = namedtuple('AsciiBase', ['asc', 'index', 'desc', 'size'])
 
 
-class AsciiNode(AsciiBase):
+class AsciiData(AsciiBase):
     __slots__ = ()
 
     def __new__(
@@ -16,7 +16,7 @@ class AsciiNode(AsciiBase):
         desc='',
         size=0
     ):
-        return super(AsciiNode, cls).__new__(cls, asc, index, desc, size)
+        return super(AsciiData, cls).__new__(cls, asc, index, desc, size)
 
     @classmethod
     def _from_file(cls, path):

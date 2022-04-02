@@ -56,14 +56,15 @@ class DGNode(object):
         parent.append_child(self)
 
     def append_child(self, child):
-        self._children.append(child)
+        self.children.append(child)
         self.update_total_size()
+        if self.parent:
+            self.parent.update_total_size()
 
     def update_total_size(self):
         self._total_size = self.size
-        for child in self._children:
-            child.update_total_size()
-            self._total_size = self._total_size + child.total_size
+        for child in self.children:
+            self._total_size += child.total_size
 
     @property
     def total_size(self):

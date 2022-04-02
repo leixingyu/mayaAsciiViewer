@@ -1,31 +1,114 @@
 import logging
+import time
+import sys
 from collections import OrderedDict
+from Qt import QtWidgets, QtCore, QtGui
 
-from mayaAsciiParser import ascii, asciiNode, nodeFactory, createNode, connectNode
+
+from mayaAsciiParser import ascii, asciiData, dataFactory, nodeData, connection, dgNode, view, dgnModel
 
 logging.basicConfig(level=logging.INFO)
 LOG = logging.getLogger(__name__)
 
 
-if __name__ == "__main__":
+class MainWindow(QtWidgets.QMainWindow):
+    def __init__(self):
+        super(MainWindow, self).__init__()
+
+        widget = QtWidgets.QWidget()
+        layout = QtWidgets.QGridLayout()
+
+        self.setCentralWidget(widget)
+        widget.setLayout(layout)
+
+        self.ui_tree_view = view.View()
+        # self.ui_tree_view.setStyleSheet('QWidget{font: 10pt "Bahnschrift";}')
+
+        layout.addWidget(self.ui_tree_view, 1, 0)
+
+        p = r"C:\Users\Lei\Downloads\main2.ma"
+
+        # initialize datas
+        datas = asciiData.AsciiData.from_file(p)
+        asc = ascii.Ascii(p)
+        datas = [dataFactory.DataFactory(data) for data in datas]
+
+        datas = [data for data in datas if isinstance(data, nodeData.NodeData)]
+
+        root = dgNode.DGNode.from_nodes(datas)
+        print root.total_size
+        self._model = dgnModel.DGNModel(root, self)
+
+        # proxy model
+        self._proxyModel = QtCore.QSortFilterProxyModel(self)
+        self._proxyModel.setSourceModel(self._model)
+        self._proxyModel.setDynamicSortFilter(False)
+        self._proxyModel.setSortRole(dgnModel.DGNModel.sortRole)
+        self._proxyModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        self._proxyModel.setFilterRole(dgnModel.DGNModel.filterRole)
+        self._proxyModel.setFilterKeyColumn(0)
+
+        self.ui_tree_view.setModel(self._proxyModel)
+
+
+def show():
+    st = time.time()
+    global window
+    app = QtWidgets.QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    print time.time() - st
+    sys.exit(app.exec_())
+
+
+if __name__ == '__main__':
+    show()
+
+
+def test2():
+    st = time.time()
+    p = r"C:\Users\Lei\Downloads\main2.ma"
+
+    # initialize datas
+    datas = asciiData.AsciiData.from_file(p)
+    asc = ascii.Ascii(p)
+    datas = [dataFactory.DataFactory(data) for data in datas]
+
+    datas = [data for data in datas if isinstance(data, nodeData.NodeData)]
+    print len(datas)
+    print time.time() - st
+
+    root = dgNode.DGNode.from_nodes(datas)
+
+    for node in root.children:
+        print node.name
+        for child in node.children:
+            print '\t' + child.name
+
+    print time.time() - st
+
+
+
+
+def ex1():
 
     p = r"C:\Users\Lei\Desktop\test.ma"
 
-    # initialize nodes
-    nodes = asciiNode.AsciiNode.from_file(p)
+    # initialize datas
+    datas = asciiData.AsciiData.from_file(p)
     asc = ascii.Ascii(p)
-    nodes = sorted(nodes, key=lambda n: n.size, reverse=1)
-    nodes = [nodeFactory.NodeFactory(node) for node in nodes]
+    datas = sorted(datas, key=lambda n: n.size, reverse=1)
+    datas = [dataFactory.DataFactory(data) for data in datas]
 
     # size distribution
     create_size = 0
     connect_size = 0
-    for node in nodes:
-        if isinstance(node, createNode.CreateNode):
-            create_size += node.size
+    for data in datas:
+        if isinstance(data, node.Node):
+            create_size += data.size
 
-        elif isinstance(node, connectNode.ConnectNode):
-            connect_size += node.size
+        elif isinstance(data, connection.Connection):
+            connect_size += data.size
 
     LOG.info('createNode size: %skb; percent: %s%%',
              create_size/1024,
@@ -40,21 +123,21 @@ if __name__ == "__main__":
 
     # group by type
     ntype = dict()
-    for node in nodes:
-        if not isinstance(node, createNode.CreateNode):
+    for data in datas:
+        if not isinstance(data, node.Node):
             continue
 
-        if node.type not in ntype.keys():
-            ntype[node.type] = [node]
+        if data.type not in ntype.keys():
+            ntype[data.type] = [data]
         else:
-            ntype[node.type].append(node)
+            ntype[data.type].append(data)
 
     # add size
     nsize = dict()
     for k, v in ntype.items():
         size = 0
-        for node in v:
-            size += node.size
+        for data in v:
+            size += data.size
         nsize[k] = size
 
     nsize = OrderedDict(sorted(nsize.items(), key=lambda kv: kv[1], reverse=True))
@@ -66,4 +149,4 @@ if __name__ == "__main__":
                  v/1024,
                  round(v/float(create_size) * 100, 3)
                  )
-    LOG.info("top 10 most expensive create node:\n%s", result)
+    LOG.info("top 10 most expensive create data:\n%s", result)

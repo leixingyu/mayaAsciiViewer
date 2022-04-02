@@ -8,43 +8,43 @@ with open("C:\Users\\Lei\\Downloads\\output.txt", "w") as file:
 
 """
 
-from . import asciiNode
+from . import asciiData
 
 
 def diagnose_usage(path):
     output = ''
 
     # sort
-    nodes = asciiNode.AsciiNode.from_file(path)
-    nodes = sorted(nodes, key=lambda n: n.size, reverse=1)
+    datas = asciiData.AsciiData.from_file(path)
+    datas = sorted(datas, key=lambda n: n.size, reverse=1)
 
-    for node in nodes:
+    for data in datas:
         # filter
-        if node.percent < 0.1:
+        if data.percent < 0.1:
             continue
 
         line = "[line: {index}][{size} mb][{percent}%] {description} \n".format(
-            index=node.index,
-            description=node.description,
-            percent=node.percent,
-            size=round(node.size / float(1024) / float(1024), 3)
+            index=data.index,
+            description=data.description,
+            percent=data.percent,
+            size=round(data.size / float(1024) / float(1024), 3)
         )
         output += line
 
     return output
 
 
-def parse_node_by_type(path, ntype):
+def parse_data_by_type(path, ntype):
     """
 
-    common node type: 'createNode' 'connectAttr'
+    common data type: 'createNode' 'connectAttr'
     :param path:
     :param ntype:
     :return:
     """
 
-    nodes = asciiNode.AsciiNode.from_file(path)
-    return [node for node in nodes if node.desc.startswith(ntype)]
+    datas = asciiData.AsciiData.from_file(path)
+    return [data for data in datas if data.desc.startswith(ntype)]
 
 
 def tokenize_command(line):

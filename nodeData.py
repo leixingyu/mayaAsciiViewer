@@ -1,16 +1,18 @@
-from . import baseNode
+from . import baseData
 
 
-class CreateNode(baseNode.BaseNode):
+class NodeData(baseData.BaseData):
+    """
+    A node representation based off an ascii string
+    """
 
-    def __init__(self, node):
-        super(CreateNode, self).__init__(node)
-
+    def __init__(self, *args):
+        super(NodeData, self).__init__(*args)
         if self.command != 'createNode':
             raise ValueError
 
     @property
-    def type(self):
+    def dtype(self):
         return self.args[0]
 
     @property
