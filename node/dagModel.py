@@ -1,9 +1,9 @@
 from Qt import QtWidgets, QtCore, QtGui
 
-import dgNode
+from . import dagNode
 
 
-class DGNModel(QtCore.QAbstractItemModel):
+class DagModel(QtCore.QAbstractItemModel):
     sortRole = QtCore.Qt.UserRole
     filterRole = QtCore.Qt.UserRole + 1
 
@@ -12,7 +12,7 @@ class DGNModel(QtCore.QAbstractItemModel):
         Initialization
         :param root: QJsonNode. root node of the model, it is hidden
         """
-        super(DGNModel, self).__init__(parent)
+        super(DagModel, self).__init__(parent)
         self._rootNode = root
 
     def rowCount(self, parent=QtCore.QModelIndex()):
@@ -48,7 +48,7 @@ class DGNModel(QtCore.QAbstractItemModel):
             elif index.column() == 3:
                 return node.size
 
-        elif role == DGNModel.sortRole:
+        elif role == DagModel.sortRole:
             if index.column() == 0:
                 return node.name
             elif index.column() == 1:
@@ -58,7 +58,7 @@ class DGNModel(QtCore.QAbstractItemModel):
             elif index.column() == 3:
                 return node.size
 
-        elif role == DGNModel.filterRole:
+        elif role == DagModel.filterRole:
             return node.name
 
         elif role == QtCore.Qt.SizeHintRole:
@@ -142,7 +142,7 @@ class DGNModel(QtCore.QAbstractItemModel):
         Custom: clear the model data
         """
         self.beginResetModel()
-        self._rootNode = dgNode.DGNode()
+        self._rootNode = dagNode.DagNode()
         self.endResetModel()
         return True
 

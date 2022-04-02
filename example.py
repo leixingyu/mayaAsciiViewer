@@ -2,10 +2,11 @@ import logging
 import time
 import sys
 from collections import OrderedDict
+
 from Qt import QtWidgets, QtCore, QtGui
 
-
-from mayaAsciiParser import ascii, asciiData, dataFactory, nodeData, connection, dgNode, view, dgnModel
+from mayaAsciiParser import asciiData, ascii
+from mayaAsciiParser.node import dagNode, dagModel, view
 
 logging.basicConfig(level=logging.INFO)
 LOG = logging.getLogger(__name__)
@@ -30,22 +31,21 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # initialize datas
         datas = asciiData.AsciiData.from_file(p)
-        asc = ascii.Ascii(p)
-        datas = [dataFactory.DataFactory(data) for data in datas]
+        datas = [asciiData.DataFactory(data) for data in datas]
 
-        datas = [data for data in datas if isinstance(data, nodeData.NodeData)]
+        datas = [data for data in datas if isinstance(data, asciiData.NodeData)]
 
-        root = dgNode.DGNode.from_nodes(datas)
+        root = dagNode.DagNode.from_nodes(datas)
         print root.total_size
-        self._model = dgnModel.DGNModel(root, self)
+        self._model = dagModel.DagModel(root, self)
 
         # proxy model
         self._proxyModel = QtCore.QSortFilterProxyModel(self)
         self._proxyModel.setSourceModel(self._model)
         self._proxyModel.setDynamicSortFilter(False)
-        self._proxyModel.setSortRole(dgnModel.DGNModel.sortRole)
+        self._proxyModel.setSortRole(dagModel.DagModel.sortRole)
         self._proxyModel.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
-        self._proxyModel.setFilterRole(dgnModel.DGNModel.filterRole)
+        self._proxyModel.setFilterRole(dagModel.DagModel.filterRole)
         self._proxyModel.setFilterKeyColumn(0)
 
         self.ui_tree_view.setModel(self._proxyModel)
@@ -71,14 +71,13 @@ def test2():
 
     # initialize datas
     datas = asciiData.AsciiData.from_file(p)
-    asc = ascii.Ascii(p)
-    datas = [dataFactory.DataFactory(data) for data in datas]
+    datas = [asciiData.DataFactory(data) for data in datas]
 
-    datas = [data for data in datas if isinstance(data, nodeData.NodeData)]
+    datas = [data for data in datas if isinstance(data, asciiData.NodeData)]
     print len(datas)
     print time.time() - st
 
-    root = dgNode.DGNode.from_nodes(datas)
+    root = dagNode.DagNode.from_nodes(datas)
 
     for node in root.children:
         print node.name
@@ -88,26 +87,23 @@ def test2():
     print time.time() - st
 
 
-
-
 def ex1():
-
     p = r"C:\Users\Lei\Desktop\test.ma"
 
     # initialize datas
     datas = asciiData.AsciiData.from_file(p)
     asc = ascii.Ascii(p)
     datas = sorted(datas, key=lambda n: n.size, reverse=1)
-    datas = [dataFactory.DataFactory(data) for data in datas]
+    datas = [asciiData.DataFactory(data) for data in datas]
 
     # size distribution
     create_size = 0
     connect_size = 0
     for data in datas:
-        if isinstance(data, node.Node):
+        if isinstance(data, asciiData.NodeData):
             create_size += data.size
 
-        elif isinstance(data, connection.Connection):
+        elif isinstance(data, asciiData.ConnectionData):
             connect_size += data.size
 
     LOG.info('createNode size: %skb; percent: %s%%',
@@ -124,13 +120,13 @@ def ex1():
     # group by type
     ntype = dict()
     for data in datas:
-        if not isinstance(data, node.Node):
+        if not isinstance(data, asciiData.NodeData):
             continue
 
-        if data.type not in ntype.keys():
-            ntype[data.type] = [data]
+        if data.dtype not in ntype.keys():
+            ntype[data.dtype] = [data]
         else:
-            ntype[data.type].append(data)
+            ntype[data.dtype].append(data)
 
     # add size
     nsize = dict()

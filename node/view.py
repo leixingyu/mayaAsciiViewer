@@ -11,11 +11,7 @@ class View(QtWidgets.QTreeView):
 
         # set flags
         self.setSortingEnabled(True)
-        self.setDragEnabled(True)
-        self.setAcceptDrops(True)
-        self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.setUniformRowHeights(True)
-
 
     def clear(self):
         """

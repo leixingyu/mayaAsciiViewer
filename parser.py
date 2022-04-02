@@ -1,52 +1,3 @@
-"""
-
-f = 'D:\\testbin\\maya-file.ma'
-ma = MayaAscii(f)
-
-with open("C:\Users\\Lei\\Downloads\\output.txt", "w") as file:
-    file.write(ma.diagnose_usage())
-
-"""
-
-from . import asciiData
-
-
-def diagnose_usage(path):
-    output = ''
-
-    # sort
-    datas = asciiData.AsciiData.from_file(path)
-    datas = sorted(datas, key=lambda n: n.size, reverse=1)
-
-    for data in datas:
-        # filter
-        if data.percent < 0.1:
-            continue
-
-        line = "[line: {index}][{size} mb][{percent}%] {description} \n".format(
-            index=data.index,
-            description=data.description,
-            percent=data.percent,
-            size=round(data.size / float(1024) / float(1024), 3)
-        )
-        output += line
-
-    return output
-
-
-def parse_data_by_type(path, ntype):
-    """
-
-    common data type: 'createNode' 'connectAttr'
-    :param path:
-    :param ntype:
-    :return:
-    """
-
-    datas = asciiData.AsciiData.from_file(path)
-    return [data for data in datas if data.desc.startswith(ntype)]
-
-
 def tokenize_command(line):
     """
 
@@ -89,4 +40,3 @@ def tokenize_command(line):
         args.append(arg)
 
     return command, args
-

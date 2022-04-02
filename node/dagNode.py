@@ -1,7 +1,7 @@
-from . import nodeData
+from .. import asciiData
 
 
-class DGNode(object):
+class DagNode(object):
     """
     An actual directed graph (hierarchical) node representation
     """
@@ -30,7 +30,7 @@ class DGNode(object):
 
         nodes = list()
         for i, data in enumerate(datas):
-            if not isinstance(data, nodeData.NodeData):
+            if not isinstance(data, asciiData.NodeData):
                 raise TypeError
 
             node = cls()
