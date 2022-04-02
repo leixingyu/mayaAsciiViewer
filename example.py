@@ -72,10 +72,6 @@ def show():
     sys.exit(app.exec_())
 
 
-if __name__ == '__main__':
-    show()
-
-
 def test2():
     st = time.time()
     p = r"C:\Users\Lei\Downloads\main2.ma"
@@ -99,7 +95,7 @@ def test2():
 
 
 def ex1():
-    p = r"C:\Users\Lei\Desktop\test.ma"
+    p = r"C:\Users\Lei\Desktop\maya-example-scene\model\model-village-user-guide.ma"
 
     # initialize datas
     datas = asciiData.AsciiData.from_file(p)
@@ -107,20 +103,24 @@ def ex1():
     datas = sorted(datas, key=lambda n: n.size, reverse=1)
     datas = [asciiData.DataFactory(data) for data in datas]
 
+
     # size distribution
     create_size = 0
+    create_node = 0
     connect_size = 0
     for data in datas:
         if isinstance(data, asciiData.NodeData):
             create_size += data.size
+            create_node += 1
 
         elif isinstance(data, asciiData.ConnectionData):
             connect_size += data.size
 
-    LOG.info('createNode size: %skb; percent: %s%%',
-             create_size/1024,
+    LOG.info('createNode size: %s; percent: %s%%',
+             create_size,
              round(create_size/float(asc.size)*100, 2)
              )
+    print create_node
     LOG.info('connectAttr size: %skb; percent: %s%%',
              connect_size/1024,
              round(connect_size/float(asc.size)*100, 2)
@@ -149,11 +149,15 @@ def ex1():
 
     nsize = OrderedDict(sorted(nsize.items(), key=lambda kv: kv[1], reverse=True))
 
-    result = ''
-    for k, v in nsize.items()[:10]:
-        result += "\t{} --- size: {}kb, percent: {}%\n".format(
-                 k,
-                 v/1024,
-                 round(v/float(create_size) * 100, 3)
-                 )
-    LOG.info("top 10 most expensive create data:\n%s", result)
+    # result = ''
+    # for k, v in nsize.items()[:10]:
+    #     result += "\t{} --- size: {}kb, percent: {}%\n".format(
+    #              k,
+    #              v/1024,
+    #              round(v/float(create_size) * 100, 3)
+    #              )
+    # LOG.info("top 10 most expensive create data:\n%s", result)
+
+
+if __name__ == '__main__':
+    show()

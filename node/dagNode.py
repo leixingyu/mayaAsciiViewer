@@ -6,18 +6,14 @@ class DagNode(object):
     An actual directed graph (hierarchical) node representation
     """
 
-    def __init__(self):
-        self._name = ''
-        self._ntype = ''
-        self._size = 0
-        self._parent = None
-        self._children = list()
+    def __init__(self, name='', ntype='', size=0):
+        self.name = name
+        self.ntype = ntype
+        self.size = size
+        self.parent = None
+        self.children = list()
 
-        self._total_size = 0
-
-    @classmethod
-    def create_root(cls):
-        return cls()
+        self.total_size = size
 
     @classmethod
     def from_nodes(cls, datas):
@@ -33,50 +29,39 @@ class DagNode(object):
             if not isinstance(data, asciiData.NodeData):
                 raise TypeError
 
-            node = cls()
+            node = cls(data.name, data.dtype, data.size)
             nodes.append(node)
-            node.name = data.name
-            node.ntype = data.dtype
-            node.size = data.size
-            node._total_size = node.size
 
+            parent = None
             if data.parent:
-                while i >= 0:
-                    if datas[i-1].name == data.parent:
-                        node.set_parent(nodes[i-1])
-                        break
+                while i > 0:
                     i -= 1
+                    # sometimes the name contains '|'
+                    if data.parent.endswith(datas[i].name):
+                        parent = nodes[i]
+                        break
+
+                if not parent:
+                    raise ValueError(
+                        'Parent {} not found'.format(data.parent)
+                    )
+
             else:
-                node.set_parent(root_node)
+                parent = root_node
+
+            node.set_parent(parent)
 
         return root_node
 
     def set_parent(self, parent):
-        self._parent = parent
-        parent.append_child(self)
+        self.parent = parent
+        parent.children.append(self)
+        parent.add_size(self.size)
 
-    def append_child(self, child):
-        self.children.append(child)
-        self.update_total_size()
+    def add_size(self, size):
+        self.total_size += size
         if self.parent:
-            self.parent.update_total_size()
-
-    def update_total_size(self):
-        self._total_size = self.size
-        for child in self.children:
-            self._total_size += child.total_size
-
-    @property
-    def total_size(self):
-        return self._total_size
-
-    def insert_child(self, row, child):
-        if row < 0 or row > len(self.children):
-            return False
-
-        self._children.insert(row, child)
-        child.set_parent(self)
-        return True
+            self.parent.add_size(size)
 
     def row(self):
         if self.parent:
@@ -84,40 +69,8 @@ class DagNode(object):
         return 0
 
     def child(self, row):
-        return self._children[row]
+        return self.children[row]
 
     @property
     def child_count(self):
-        return len(self._children)
-
-    @property
-    def ntype(self):
-        return self._ntype
-
-    @ntype.setter
-    def ntype(self, ntype):
-        self._ntype = ntype
-
-    @property
-    def name(self):
-        return self._name
-
-    @name.setter
-    def name(self, name):
-        self._name = name
-
-    @property
-    def size(self):
-        return self._size
-
-    @size.setter
-    def size(self, size):
-        self._size = size
-
-    @property
-    def parent(self):
-        return self._parent
-
-    @property
-    def children(self):
-        return self._children
+        return len(self.children)

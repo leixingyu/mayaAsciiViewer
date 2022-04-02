@@ -11,10 +11,10 @@ with open("C:\Users\\Lei\\Downloads\\output.txt", "w") as file:
 
 from collections import namedtuple
 
-from . import ascii, parser
+from . import ascii
 
 
-AsciiBase = namedtuple('AsciiBase', ['asc', 'index', 'desc', 'size'])
+AsciiBase = namedtuple('AsciiBase', ['asc', 'index', 'desc', 'size', 'command', 'args'])
 
 
 def diagnose_usage(path):
@@ -61,9 +61,11 @@ class AsciiData(AsciiBase):
         asc,
         index,
         desc='',
-        size=0
+        size=0,
+        command='',
+        args=None
     ):
-        return super(AsciiData, cls).__new__(cls, asc, index, desc, size)
+        return super(AsciiData, cls).__new__(cls, asc, index, desc, size, command, args)
 
     @classmethod
     def _from_file(cls, path):
@@ -150,60 +152,65 @@ class AsciiData(AsciiBase):
 class DataFactory(object):
 
     def __new__(cls, data):
-        command, _ = parser.tokenize_command(data.desc)
+        command, args = DataFactory.tokenize_command(data.desc)
 
-        args = [data.asc, data.index, data.desc, data.size]
+        args = [data.asc, data.index, data.desc, data.size, command, args]
 
         if command == 'createNode':
             return NodeData(*args)
         elif command == 'connectAttr':
             return ConnectionData(*args)
 
+    @staticmethod
+    def tokenize_command(line):
+        """
 
-class BaseData(object):
+        Source: https://github.com/mottosso/maya-scenefile-parser/
 
-    def __init__(self, asc, index, desc, size):
-        self._asc = asc
-        self._index = index
-        self._desc = desc
-        self._size = size
+        :param line: str
+        :return:
+        """
+        command, _, line = line.partition(" ")
+        command = command.lstrip()
 
-        self._command, self._args = parser.tokenize_command(self.desc)
+        args = list()
+        while True:
+            line = line.strip()
 
-    @property
-    def asc(self):
-        return self._asc
+            if not line:
+                break
 
-    @property
-    def index(self):
-        return self._index
+            # handle quotation marks in string
+            if line[0] in ['\"', "\'"]:
+                string_delim = line[0]
+                escaped = False
+                string_end = len(line)
 
-    @property
-    def desc(self):
-        return self._desc
+                # find the closing quote as string end
+                for i in range(1, len(line)):
+                    if not escaped and line[i] == string_delim:
+                        string_end = i
+                        break
+                    elif not escaped and line[i] == "\\":
+                        escaped = True
+                    else:
+                        escaped = False
 
-    @property
-    def size(self):
-        return self._size
+                arg, line = line[1:string_end], line[string_end+1:]
 
-    @property
-    def command(self):
-        return self._command
+            else:
+                arg, _, line = line.partition(" ")
 
-    @property
-    def args(self):
-        return self._args
+            args.append(arg)
+
+        return command, args
 
 
-class NodeData(BaseData):
+class NodeData(AsciiBase):
     """
     A node representation based off an ascii string
     """
-
-    def __init__(self, *args):
-        super(NodeData, self).__init__(*args)
-        if self.command != 'createNode':
-            raise ValueError
+    __slots__ = ()
 
     @property
     def dtype(self):
@@ -234,10 +241,8 @@ class NodeData(BaseData):
         return '-ss' in self.args
 
 
-class ConnectionData(BaseData):
-
-    def __init__(self, *args):
-        super(ConnectionData, self).__init__(*args)
+class ConnectionData(AsciiBase):
+    __slots__ = ()
 
     @property
     def source(self):
