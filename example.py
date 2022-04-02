@@ -11,6 +11,9 @@ from mayaAsciiParser.node import dagNode, dagModel
 logging.basicConfig(level=logging.INFO)
 LOG = logging.getLogger(__name__)
 
+p = r"C:\Users\Lei\Desktop\maya-example-scene\model\model-village-user-guide.ma"
+p = r"C:\Users\Lei\Desktop\maya-example-scene\fx\PHX3_BeachWaves_Maya2015\PhoenixFD_Maya2015_BeachWaves.ma"
+p = r"C:\Users\Lei\Desktop\maya-example-scene\rig\kayla_v1.9\kayla2017\kayla2017.ma"
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -29,8 +32,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui_tree_view.setUniformRowHeights(True)
 
         layout.addWidget(self.ui_tree_view, 1, 0)
-
-        p = r"C:\Users\Lei\Desktop\maya-example-scene\model\model-village-user-guide.ma"
 
         # initialize datas
         datas = asciiData.AsciiData.from_file(p)
@@ -74,7 +75,6 @@ def show():
 
 def test2():
     st = time.time()
-    p = r"C:\Users\Lei\Downloads\main2.ma"
 
     # initialize datas
     datas = asciiData.AsciiData.from_file(p)
@@ -95,8 +95,6 @@ def test2():
 
 
 def ex1():
-    p = r"C:\Users\Lei\Desktop\maya-example-scene\model\model-village-user-guide.ma"
-
     # initialize datas
     datas = asciiData.AsciiData.from_file(p)
     asc = ascii.Ascii(p)
