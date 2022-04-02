@@ -4,27 +4,28 @@ from . import dagNode
 
 
 class DagModel(QtCore.QAbstractItemModel):
-    sortRole = QtCore.Qt.UserRole
-    filterRole = QtCore.Qt.UserRole + 1
+    sort_role = QtCore.Qt.UserRole
+    filter_role = QtCore.Qt.UserRole + 1
 
     def __init__(self, root, parent=None):
         """
         Initialization
-        :param root: QJsonNode. root node of the model, it is hidden
+
+        :param root: DagNode. root node of the model, it is hidden
         """
         super(DagModel, self).__init__(parent)
-        self._rootNode = root
+        self._root_node = root
 
     def rowCount(self, parent=QtCore.QModelIndex()):
         """
         Override
         """
         if not parent.isValid():
-            parentNode = self._rootNode
+            parent_node = self._root_node
         else:
-            parentNode = parent.internalPointer()
+            parent_node = parent.internalPointer()
 
-        return parentNode.child_count
+        return parent_node.child_count
 
     def columnCount(self, parent=QtCore.QModelIndex()):
         """
@@ -36,7 +37,7 @@ class DagModel(QtCore.QAbstractItemModel):
         """
         Override
         """
-        node = self.getNode(index)
+        node = self.get_node(index)
 
         if role == QtCore.Qt.DisplayRole:
             if index.column() == 0:
@@ -48,7 +49,7 @@ class DagModel(QtCore.QAbstractItemModel):
             elif index.column() == 3:
                 return node.size
 
-        elif role == DagModel.sortRole:
+        elif role == DagModel.sort_role:
             if index.column() == 0:
                 return node.name
             elif index.column() == 1:
@@ -58,7 +59,7 @@ class DagModel(QtCore.QAbstractItemModel):
             elif index.column() == 3:
                 return node.size
 
-        elif role == DagModel.filterRole:
+        elif role == DagModel.filter_role:
             return node.name
 
         elif role == QtCore.Qt.SizeHintRole:
@@ -85,10 +86,10 @@ class DagModel(QtCore.QAbstractItemModel):
         if not self.hasIndex(row, column, parent):
             return QtCore.QModelIndex()
 
-        parentNode = self.getNode(parent)
-        currentNode = parentNode.child(row)
-        if currentNode:
-            return self.createIndex(row, column, currentNode)
+        parent_node = self.get_node(parent)
+        current_node = parent_node.child(row)
+        if current_node:
+            return self.createIndex(row, column, current_node)
         else:
             return QtCore.QModelIndex()
 
@@ -96,63 +97,30 @@ class DagModel(QtCore.QAbstractItemModel):
         """
         Override
         """
-        currentNode = self.getNode(index)
-        parentNode = currentNode.parent
+        current_node = self.get_node(index)
+        parent_node = current_node.parent
 
-        if parentNode == self._rootNode:
+        if parent_node == self._root_node:
             return QtCore.QModelIndex()
 
-        return self.createIndex(parentNode.row(), 0, parentNode)
-
-    def addChildren(self, children, parent=QtCore.QModelIndex()):
-        """
-        Custom: add children QJsonNode to the specified index
-        """
-        self.beginInsertRows(parent, 0, len(children) - 1)
-
-        if parent == QtCore.QModelIndex():
-            parentNode = self._rootNode
-        else:
-            parentNode = parent.internalPointer()
-
-        for child in children:
-            parentNode.addChild(child)
-
-        self.endInsertRows()
-        return True
-
-    def removeChild(self, position, parent=QtCore.QModelIndex()):
-        """
-        Custom: remove child of position for the specified index
-        """
-        self.beginRemoveRows(parent, position, position)
-
-        if parent == QtCore.QModelIndex():
-            parentNode = self._rootNode
-        else:
-            parentNode = parent.internalPointer()
-
-        parentNode.removeChild(position)
-
-        self.endRemoveRows()
-        return True
+        return self.createIndex(parent_node.row(), 0, parent_node)
 
     def clear(self):
         """
         Custom: clear the model data
         """
         self.beginResetModel()
-        self._rootNode = dagNode.DagNode()
+        self._root_node = dagNode.DagNode()
         self.endResetModel()
         return True
 
-    def getNode(self, index):
+    def get_node(self, index):
         """
-        Custom: get QJsonNode from model index
+        Custom: get DagNode from model index
         :param index: QModelIndex. specified index
         """
         if index.isValid():
-            currentNode = index.internalPointer()
-            if currentNode:
-                return currentNode
-        return self._rootNode
+            current_node = index.internalPointer()
+            if current_node:
+                return current_node
+        return self._root_node
