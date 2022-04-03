@@ -35,7 +35,7 @@ but you will need to clone using `git clone --recursive`
 
 ### model-village-user-guide.ma 
 
-> [6.95s | 6.91s | 13.86s]
+> [4.39s | 6.87s | 11.26s]
 
 - 9,134,983 lines
 - 392,495,914 bytes
@@ -43,7 +43,7 @@ but you will need to clone using `git clone --recursive`
 
 ### PhoenixFD_BeachWaves.ma 
 
-> [3.06s | <0.01s | 3.06s]
+> [1.71s | <0.01s | 1.71s]
 
 - 3,296,117 lines
 - 209,392,366 bytes
@@ -51,7 +51,7 @@ but you will need to clone using `git clone --recursive`
 
 ### Kayla 2017 Rig.ma
 
-> [2.16s | 0.07s | 2.23s]
+> [1.32s | 0.07s | 1.39s]
 
 - 2,128,357 lines
 - 114,675,946 bytes
