@@ -68,38 +68,59 @@ class AsciiData(AsciiBase):
         return super(AsciiData, cls).__new__(cls, asc, index, desc, size, command, args)
 
     @classmethod
-    def _from_file(cls, path):
+    def from_file(cls, path):
+        """
+        57% faster than .readline()
+
+        :param path:
+        :return:
+        """
+
         nodes = list()
 
         with open(path) as f:
             asc = ascii.Ascii(path)
-
-            prv_index = -1
-            prv_description = ''
-            prv_size = 0
+            buf_index = -1
+            buf_desc = ''
+            buf_size = 0
 
             for index, line in enumerate(f):
+                # empty line
                 if not line:
                     continue
 
-                # a node doesn't have any indentation
-                # whereas the node's attributes are all indented
-                # the last node is ignored as it indicates end of file
+                # comment
+                if line.startswith('\\'):
+                    continue
+
+                # node
                 if not line.startswith('\t'):
-                    node = cls(asc, prv_index, prv_description, prv_size)
+                    nodes.append(cls(asc, buf_index, buf_desc, buf_size))
+                    buf_index = index + 1
+                    buf_size = len(line)
+                    buf_desc = line
 
-                    prv_index = index + 1
-                    prv_description = line
-                    prv_size = len(line)
-
-                    nodes.append(node)
+                    is_open = True
                 else:
-                    prv_size += len(line)
+                    if is_open:
+                        buf_desc += line
+                    buf_size += len(line)
+
+                if is_open and line.endswith(';\n'):
+                    is_open = False
 
         return nodes
 
     @classmethod
-    def from_file(cls, path):
+    def _from_file(cls, path):
+        """
+        Obsolete; slower to parse the ascii file
+        Could be use to cross-validate parsed data
+
+        :param path:
+        :return:
+        """
+
         nodes = list()
         asc = ascii.Ascii(path)
 
