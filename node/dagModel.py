@@ -11,7 +11,7 @@ class DagModel(QtCore.QAbstractItemModel):
         """
         Initialization
 
-        :param root: DagNode. root node of the model, it is hidden
+        :param root: DagNode. the invisible scene root node of the model
         """
         super(DagModel, self).__init__(parent)
         self._root_node = root

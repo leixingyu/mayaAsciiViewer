@@ -4,6 +4,9 @@ from pipelineUtil.fileSystem import winFile
 
 
 class Ascii(winFile.WinFile):
+    """
+    Class for representing Maya Ascii file
+    """
 
     def __init__(self, path):
         super(Ascii, self).__init__(path)

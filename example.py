@@ -12,8 +12,9 @@ logging.basicConfig(level=logging.INFO)
 LOG = logging.getLogger(__name__)
 
 p = r"C:\Users\Lei\Desktop\maya-example-scene\model\model-village-user-guide.ma"
-p = r"C:\Users\Lei\Desktop\maya-example-scene\fx\PHX3_BeachWaves_Maya2015\PhoenixFD_Maya2015_BeachWaves.ma"
-p = r"C:\Users\Lei\Desktop\maya-example-scene\rig\kayla_v1.9\kayla2017\kayla2017.ma"
+#p = r"C:\Users\Lei\Desktop\maya-example-scene\fx\PHX3_BeachWaves_Maya2015\PhoenixFD_Maya2015_BeachWaves.ma"
+#p = r"C:\Users\Lei\Desktop\maya-example-scene\rig\kayla_v1.9\kayla2017\kayla2017.ma"
+
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -40,7 +41,7 @@ class MainWindow(QtWidgets.QMainWindow):
         datas = [data for data in datas if isinstance(data, asciiData.NodeData)]
         print 'time parsing file: {}'.format(time.time()-st)
 
-        root = dagNode.DagNode.from_nodes(datas)
+        root = dagNode.DagNode.from_data(datas)
         print len(datas)
         print 'time creating node: {}'.format(time.time()-st)
 
