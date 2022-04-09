@@ -1,6 +1,44 @@
 from .. import asciiData
 
 
+def from_ascii_data(datas):
+    """
+    Create node networks from Ascii datas
+
+    :param datas: list of NodeData(s). ascii data starting with 'createNode'
+    :return: NodeData. root node data
+    """
+    root_node = DagNode()
+
+    nodes = list()
+    for i, data in enumerate(datas):
+        if not isinstance(data, asciiData.NodeData):
+            raise TypeError
+
+        node = DagNode(data.name, data.dtype, data.size)
+        nodes.append(node)
+
+        parent = None
+        if data.parent:
+            while i > 0:
+                i -= 1
+                # sometimes the name contains '|'
+                if data.parent.endswith(datas[i].name):
+                    parent = nodes[i]
+                    break
+
+            if not parent:
+                raise ValueError(
+                    'Parent {} not found'.format(data.parent)
+                )
+        else:
+            parent = root_node
+
+        node.set_parent(parent)
+
+    return root_node
+
+
 class DagNode(object):
     """
     Maya Dag node representation for hierarchical relationship
@@ -21,44 +59,6 @@ class DagNode(object):
         self.parent = None
         self.children = list()
         self.total_size = size
-
-    @classmethod
-    def from_data(cls, datas):
-        """
-        Create node networks from Ascii node data
-
-        :param datas: list of NodeData(s). ascii data starting with 'createNode'
-        :return: NodeData. root node data
-        """
-        root_node = cls()
-
-        nodes = list()
-        for i, data in enumerate(datas):
-            if not isinstance(data, asciiData.NodeData):
-                raise TypeError
-
-            node = cls(data.name, data.dtype, data.size)
-            nodes.append(node)
-
-            parent = None
-            if data.parent:
-                while i > 0:
-                    i -= 1
-                    # sometimes the name contains '|'
-                    if data.parent.endswith(datas[i].name):
-                        parent = nodes[i]
-                        break
-
-                if not parent:
-                    raise ValueError(
-                        'Parent {} not found'.format(data.parent)
-                    )
-            else:
-                parent = root_node
-
-            node.set_parent(parent)
-
-        return root_node
 
     def set_parent(self, parent):
         """

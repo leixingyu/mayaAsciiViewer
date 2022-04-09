@@ -32,13 +32,15 @@ print(output)
 
 from collections import namedtuple
 
-from . import ascii
-
 
 AsciiBase = namedtuple('AsciiBase', ['asc', 'index', 'desc', 'size', 'command', 'args'])
 
 
 class AsciiData(AsciiBase):
+    """
+    An ascii string representation of an abstract node
+    """
+
     __slots__ = ()
 
     def __new__(
@@ -82,169 +84,18 @@ class AsciiData(AsciiBase):
             self.size,
         )
 
-    @classmethod
-    def from_file(cls, path):
-        """
-        Create a network of Ascii datas from a path
-
-        57% faster than .readline()
-
-        :param path: str. .ma full path
-        :return: list of AsciiData. data network
-        """
-        datas = list()
-        with open(path) as f:
-            asc = ascii.Ascii(path)
-            buf_index = -1
-            buf_desc = ''
-            buf_size = 0
-
-            for index, line in enumerate(f):
-                # empty line
-                if not line:
-                    continue
-
-                # comment
-                if line.startswith('\\'):
-                    continue
-
-                # node
-                if not line.startswith('\t'):
-                    datas.append(cls(asc, buf_index, buf_desc, buf_size))
-                    buf_index = index + 1
-                    buf_size = len(line)
-                    buf_desc = line
-
-                    is_open = True
-                else:
-                    if is_open:
-                        buf_desc += line
-                    buf_size += len(line)
-
-                if is_open and line.endswith(';\n'):
-                    is_open = False
-
-        return datas
-
-    @classmethod
-    def _from_file(cls, path):
-        """
-        Obsolete; slower alternative to parse the ascii file
-        Could be use to cross-validate parsed data
-        """
-        datas = list()
-        asc = ascii.Ascii(path)
-        with open(path) as f:
-
-            # the first node
-            index = 1
-            line = f.readline()
-            last_index = index
-            last_line = line
-            size = len(line)
-
-            while True:
-                # end of file
-                if not line:
-                    break
-
-                # comment
-                if line.startswith('//'):
-                    pass
-
-                # node has no indentation
-                elif not line.startswith('\t'):
-                    datas.append(cls(asc, last_index, last_line, size))
-
-                    size = len(line)
-                    last_index = index
-
-                    while not line.endswith(';\n'):
-                        line += f.readline()
-                        size += len(line)
-                        index += 1
-
-                    last_line = line
-
-                else:
-                    size += len(line)
-
-                index += 1
-                line = f.readline()
-
-        return datas
-
     @property
     def percent(self):
         percent = self.size / float(self.asc.size) * 100
         return round(percent, 3)
 
 
-class DataFactory(object):
-    """
-    Factory for creating sub data types based on AsciiData
-    """
-    def __new__(cls, data):
-        command, args = DataFactory.tokenize_command(data.desc)
-        args = [data.asc, data.index, data.desc, data.size, command, args]
-        if command == 'createNode':
-            return NodeData(*args)
-        elif command == 'connectAttr':
-            return ConnectionData(*args)
-
-    @staticmethod
-    def tokenize_command(line):
-        """
-        Tokenize mel command into list of arguments for easier processing
-        Source: https://github.com/mottosso/maya-scenefile-parser/
-
-        :param line: str. mel command
-        :return: tuple (str, list). command name, and list of arguments
-        """
-        command, _, line = line.partition(" ")
-        command = command.lstrip()
-
-        args = list()
-        while True:
-            line = line.strip()
-
-            if not line:
-                break
-
-            # handle quotation marks in string
-            if line[0] in ['\"', "\'"]:
-                string_delim = line[0]
-                escaped = False
-                string_end = len(line)
-
-                # find the closing quote as string end
-                for i in range(1, len(line)):
-                    if not escaped and line[i] == string_delim:
-                        string_end = i
-                        break
-                    elif not escaped and line[i] == "\\":
-                        escaped = True
-                    else:
-                        escaped = False
-
-                arg, line = line[1:string_end], line[string_end+1:]
-
-            else:
-                arg, _, line = line.partition(" ")
-
-            args.append(arg)
-
-        return command, args
-
-
-class NodeData(AsciiBase):
+class NodeData(AsciiData):
     """
     An ascii string representation of a createNode mel command
 
     https://help.autodesk.com/cloudhelp/2018/ENU/Maya-Tech-Docs/CommandsPython/
     """
-
-    __slots__ = ()
 
     @property
     def dtype(self):
@@ -290,14 +141,12 @@ class NodeData(AsciiBase):
         return '-ss' in self.args
 
 
-class ConnectionData(AsciiBase):
+class ConnectionData(AsciiData):
     """
     An ascii string representation of a connectAttr mel command
 
     https://help.autodesk.com/cloudhelp/2018/ENU/Maya-Tech-Docs/CommandsPython/
     """
-
-    __slots__ = ()
 
     @property
     def source(self):
