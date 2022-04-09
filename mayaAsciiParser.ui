@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>307</width>
+    <width>590</width>
     <height>417</height>
    </rect>
   </property>
@@ -22,11 +22,23 @@
      <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="0">
        <widget class="QTreeView" name="ui_tree_view">
+        <property name="editTriggers">
+         <set>QAbstractItemView::NoEditTriggers</set>
+        </property>
+        <property name="alternatingRowColors">
+         <bool>true</bool>
+        </property>
+        <property name="selectionMode">
+         <enum>QAbstractItemView::NoSelection</enum>
+        </property>
         <property name="uniformRowHeights">
          <bool>true</bool>
         </property>
         <property name="sortingEnabled">
          <bool>true</bool>
+        </property>
+        <property name="expandsOnDoubleClick">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
@@ -39,7 +51,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>307</width>
+     <width>590</width>
      <height>21</height>
     </rect>
    </property>

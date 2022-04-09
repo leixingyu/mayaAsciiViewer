@@ -3,7 +3,7 @@
 Maya Ascii file (.ma) standalone parser, view essential file information
 without needing to wait for Maya to open.
 
-![preview](https://i.imgur.com/2SDq27G.png)
+![preview](https://i.imgur.com/qbbreE1.png)
 
 ## Getting Started
 

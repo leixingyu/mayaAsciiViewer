@@ -15,7 +15,7 @@ def from_ascii_data(datas):
         if not isinstance(data, asciiData.NodeData):
             raise TypeError
 
-        node = DagNode(data.name, data.dtype, data.size)
+        node = DagNode(data.name, data.dtype, data.size, data.index)
         nodes.append(node)
 
         parent = None
@@ -44,7 +44,7 @@ class DagNode(object):
     Maya Dag node representation for hierarchical relationship
     """
 
-    def __init__(self, name='', ntype='', size=0):
+    def __init__(self, name='', ntype='', size=0, index=-1):
         """
         Initialization
 
@@ -55,6 +55,7 @@ class DagNode(object):
         self.name = name
         self.ntype = ntype
         self.size = size
+        self.index = index
 
         self.parent = None
         self.children = list()

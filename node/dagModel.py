@@ -33,21 +33,37 @@ class DagModel(QtCore.QAbstractItemModel):
         """
         return 5
 
+    def flags(self, index):
+        """
+        Override
+        """
+        flags = super(DagModel, self).flags(index)
+        return QtCore.Qt.ItemIsEditable | flags
+
     def data(self, index, role):
         """
         Override
         """
         node = self.get_node(index)
 
-        if role == QtCore.Qt.DisplayRole:
+        if role in [QtCore.Qt.DisplayRole, QtCore.Qt.EditRole]:
             if index.column() == 0:
                 return node.name
             elif index.column() == 1:
                 return node.ntype
             elif index.column() == 2:
-                return node.total_size
+                if node.total_size > 1024 * 1024:
+                    return '{}MB'.format(
+                        round(node.total_size/1024.0/1024, 2)
+                    )
+
+                return '{}KB'.format(
+                    round(node.total_size/1024.0, 2)
+                )
             elif index.column() == 3:
-                return node.size
+                return round(
+                        node.total_size/float(self._root_node.total_size)*100
+                    )
 
         elif role == DagModel.sort_role:
             if index.column() == 0:
@@ -57,7 +73,7 @@ class DagModel(QtCore.QAbstractItemModel):
             elif index.column() == 2:
                 return node.total_size
             elif index.column() == 3:
-                return node.size
+                return node.total_size
 
         elif role == DagModel.filter_role:
             return node.name
@@ -77,7 +93,10 @@ class DagModel(QtCore.QAbstractItemModel):
             elif section == 2:
                 return "Size"
             else:
-                return "More"
+                return "Percentage"
+
+        elif role == QtCore.Qt.InitialSortOrderRole:
+            return QtCore.Qt.DescendingOrder
 
     def index(self, row, column, parent=QtCore.QModelIndex()):
         """

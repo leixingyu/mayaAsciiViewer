@@ -8,7 +8,7 @@ from Qt import QtWidgets, QtCore, QtGui
 from Qt import _loadUi
 from guiUtil import prompt
 
-from mayaAsciiParser import ascii, asciiData
+from mayaAsciiParser import ascii, asciiData, loadThread
 from mayaAsciiParser.node import dagNode, dagModel
 
 
@@ -19,8 +19,39 @@ logging.basicConfig(level=logging.INFO)
 LOG = logging.getLogger(__name__)
 
 p = r"C:\Users\Lei\Desktop\maya-example-scene\model\model-village-user-guide.ma"
-p = r"C:\Users\Lei\Desktop\maya-example-scene\fx\PHX3_BeachWaves_Maya2015\PhoenixFD_Maya2015_BeachWaves.ma"
+# p = r"C:\Users\Lei\Desktop\maya-example-scene\fx\PHX3_BeachWaves_Maya2015\PhoenixFD_Maya2015_BeachWaves.ma"
 p = r"C:\Users\Lei\Desktop\maya-example-scene\rig\kayla_v1.9\kayla2017\kayla2017.ma"
+
+
+class Delegate(QtWidgets.QItemDelegate):
+    def __init__(self, parent=None):
+        super(Delegate, self).__init__(parent)
+
+    def createEditor(self, parent, option, index):
+        editor = QtWidgets.QProgressBar(parent)
+        editor.setMinimum(0)
+        editor.setMaximum(100)
+
+        return editor
+
+    def setEditorData(self, editor, index):
+        model_value = index.model().data(index, QtCore.Qt.EditRole)
+        GRADS = ['#c0ff33', '#feff5c', '#ffc163', '#ffa879', '#fb4b4b', '#fb4b4b']
+        color = GRADS[int(model_value / 20)]
+
+        style = """
+        QProgressBar {{
+            border: 1px solid grey;
+            text-align: center;
+        }}
+
+        QProgressBar::chunk {{
+            background-color: {};
+        }}
+        """.format(color)
+
+        editor.setValue(model_value)
+        editor.setStyleSheet(style)
 
 
 class MyProxyModel(QtCore.QSortFilterProxyModel):
@@ -43,15 +74,22 @@ class MyProxyModel(QtCore.QSortFilterProxyModel):
 
 
 class MainWindow(QtWidgets.QMainWindow):
+    PERCENT_COLUMN = 3
+
     def __init__(self):
         super(MainWindow, self).__init__()
         _loadUi(UI_PATH, self)
 
         self._model = None
         self.proxy_model = MyProxyModel(self)
+        delegate = Delegate(self.ui_tree_view)
 
         self.ui_tree_view.setModel(self.proxy_model)
-        self.ui_open_action.triggered.connect(self.load)
+        self.ui_tree_view.setItemDelegateForColumn(MainWindow.PERCENT_COLUMN, delegate)
+        self.ui_tree_view.expanded.connect(self.makeChildrenPersistent)
+        self.ui_tree_view.setStyleSheet('QWidget{font: 10pt "Bahnschrift";}')
+
+        self.ui_open_action.triggered.connect(lambda: self.load(p))
 
         self.ui_progress = QtWidgets.QProgressBar()
         self.statusBar().addPermanentWidget(self.ui_progress)
@@ -59,31 +97,56 @@ class MainWindow(QtWidgets.QMainWindow):
     def update_progress(self, value):
         self.ui_progress.setValue(value)
 
-    def load(self):
-        mfile = prompt.set_import_path(
-            default_path=r"C:\Users\Lei\Desktop\maya-example-scene",
-            file_type='*.ma'
-        )
+    def load(self, mfile=None):
+        if not mfile:
+            mfile = prompt.set_import_path(
+                default_path=r"C:\Users\Lei\Desktop\maya-example-scene",
+                file_type='*.ma'
+            )
 
         if not mfile:
+            prompt.message_log(ltype='error', message="Action Canceled by User")
             return
 
         st = time.time()
 
-        from mayaAsciiParser import loadThread
         progress_thread = loadThread.LoadThread()
         progress_thread.progressChanged.connect(self.update_progress)
 
-        datas = [data for data in progress_thread.load(mfile)
-                 if isinstance(data, asciiData.NodeData)]
+        def get_root(mfile):
+            datas = [data for data in progress_thread.load(mfile)
+                     if isinstance(data, asciiData.NodeData)]
 
-        print 'time parsing file: {}'.format(time.time()-st)
+            print 'time parsing file: {}'.format(time.time()-st)
 
-        root = dagNode.from_ascii_data(datas)
-        print 'time creating node: {}'.format(time.time()-st)
+            root = dagNode.from_ascii_data(datas)
+            print 'time creating node: {}'.format(time.time()-st)
+            return root
 
-        self._model = dagModel.DagModel(root, self)
+        self._model = dagModel.DagModel(get_root(mfile), self)
         self.proxy_model.setSourceModel(self._model)
+
+        self.ui_tree_view.sortByColumn(MainWindow.PERCENT_COLUMN)
+
+        self.makeChildrenPersistent()
+
+    def visibleRange(self):
+        top = self.ui_tree_view.viewport().rect().topLeft()
+        bottom = self.ui_tree_view.viewport().rect().bottomLeft()
+        return range(self.ui_tree_view.indexAt(top).row(),
+                     self.ui_tree_view.indexAt(bottom).row()+1)
+
+    def makeChildrenPersistent(self, index=QtCore.QModelIndex()):
+        for row in range(0, self.proxy_model.rowCount(index)):
+            # no parent
+            if index == QtCore.QModelIndex():
+                child = self.proxy_model.index(row, MainWindow.PERCENT_COLUMN)
+
+            # has parent
+            else:
+                child = index.child(row, MainWindow.PERCENT_COLUMN)
+
+            self.ui_tree_view.openPersistentEditor(child)
 
 
 def test():
