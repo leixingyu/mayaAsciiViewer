@@ -31,7 +31,7 @@ class DagModel(QtCore.QAbstractItemModel):
         """
         Override
         """
-        return 5
+        return 4
 
     def flags(self, index):
         """

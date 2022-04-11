@@ -1,7 +1,5 @@
-import logging
 import os
 import sys
-import time
 from collections import OrderedDict
 
 from Qt import QtWidgets, QtCore, QtGui
@@ -9,29 +7,25 @@ from Qt import _loadUi
 from guiUtil import prompt
 
 from mayaAsciiParser import ascii, asciiData, loadThread
-from mayaAsciiParser.node import dagNode, dagModel
+from mayaAsciiParser.node import dagModel, dagNode
 
 
 MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
 UI_PATH = os.path.join(MODULE_PATH, 'mayaAsciiParser.ui')
-
-logging.basicConfig(level=logging.INFO)
-LOG = logging.getLogger(__name__)
 
 p = r"C:\Users\Lei\Desktop\maya-example-scene\model\model-village-user-guide.ma"
 # p = r"C:\Users\Lei\Desktop\maya-example-scene\fx\PHX3_BeachWaves_Maya2015\PhoenixFD_Maya2015_BeachWaves.ma"
 p = r"C:\Users\Lei\Desktop\maya-example-scene\rig\kayla_v1.9\kayla2017\kayla2017.ma"
 
 
-class Delegate(QtWidgets.QItemDelegate):
+class PercentageDelegate(QtWidgets.QItemDelegate):
     def __init__(self, parent=None):
-        super(Delegate, self).__init__(parent)
+        super(PercentageDelegate, self).__init__(parent)
 
     def createEditor(self, parent, option, index):
         editor = QtWidgets.QProgressBar(parent)
         editor.setMinimum(0)
         editor.setMaximum(100)
-
         return editor
 
     def setEditorData(self, editor, index):
@@ -82,61 +76,74 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self._model = None
         self.proxy_model = MyProxyModel(self)
-        delegate = Delegate(self.ui_tree_view)
-
-        self.ui_tree_view.setModel(self.proxy_model)
-        self.ui_tree_view.setItemDelegateForColumn(MainWindow.PERCENT_COLUMN, delegate)
-        self.ui_tree_view.expanded.connect(self.makeChildrenPersistent)
-        self.ui_tree_view.setStyleSheet('QWidget{font: 10pt "Bahnschrift";}')
-
-        self.ui_open_action.triggered.connect(lambda: self.load(p))
+        self.delegate = PercentageDelegate(self.ui_tree_view)
 
         self.ui_progress = QtWidgets.QProgressBar()
+
+        self.config()
+        self.connect_signals()
+
+    def config(self):
+        self.ui_progress.setVisible(False)
         self.statusBar().addPermanentWidget(self.ui_progress)
+
+        self.ui_tree_view.setStyleSheet('QWidget{font: 10pt "Bahnschrift";}')
+        self.ui_tree_view.setModel(self.proxy_model)
+        self.ui_tree_view.setItemDelegateForColumn(MainWindow.PERCENT_COLUMN, self.delegate)
+
+    def connect_signals(self):
+        self.ui_tree_view.expanded.connect(self.make_children_persistent)
+
+        self.ui_open_action.triggered.connect(lambda: self.load(p))
+        self.ui_clear_action.triggered.connect(self.clear_view)
 
     def update_progress(self, value):
         self.ui_progress.setValue(value)
 
-    def load(self, mfile=None):
-        if not mfile:
-            mfile = prompt.set_import_path(
-                default_path=r"C:\Users\Lei\Desktop\maya-example-scene",
-                file_type='*.ma'
-            )
+        if value >= 100:
+            self.ui_progress.setVisible(False)
+        elif self.ui_progress.isHidden():
+            self.ui_progress.setVisible(True)
 
+    def update_message(self, msg):
+        self.statusBar().showMessage(msg, timeout=2)
+
+    def load(self, mfile=None):
+        mfile = get_ascii(mfile)
         if not mfile:
-            prompt.message_log(ltype='error', message="Action Canceled by User")
             return
 
-        st = time.time()
+        self.clear_view()
+        self.load_view(mfile)
+        self.format_view()
 
-        progress_thread = loadThread.LoadThread()
-        progress_thread.progressChanged.connect(self.update_progress)
+    def clear_view(self):
+        # FIXME: this doesn't work correctly
+        if self.ui_tree_view.model().sourceModel():
+            # self._model = None
+            # self.proxy_model.setSourceModel(self._model)
+            self.ui_tree_view.model().sourceModel().clear()
 
-        def get_root(mfile):
-            datas = [data for data in progress_thread.load(mfile)
-                     if isinstance(data, asciiData.NodeData)]
+    def format_view(self):
+        self.ui_tree_view.header().resizeSection(0, 180)
+        self.ui_tree_view.sortByColumn(MainWindow.PERCENT_COLUMN)
+        self.make_children_persistent()
+        self.ui_tree_view.header().setStretchLastSection(1)
 
-            print 'time parsing file: {}'.format(time.time()-st)
+    def load_view(self, mfile=None):
+        load_thread = loadThread.LoadThread()
+        load_thread.progress_changed.connect(self.update_progress)
+        load_thread.event_occurred.connect(self.update_message)
 
-            root = dagNode.from_ascii_data(datas)
-            print 'time creating node: {}'.format(time.time()-st)
-            return root
+        # file loading
+        datas = [data for data in load_thread.load(mfile) if isinstance(data, asciiData.NodeData)]
 
-        self._model = dagModel.DagModel(get_root(mfile), self)
+        # model building
+        root = load_thread.build(datas)
+        self._model = dagModel.DagModel(root, self)
         self.proxy_model.setSourceModel(self._model)
 
-        self.ui_tree_view.sortByColumn(MainWindow.PERCENT_COLUMN)
-
-        self.makeChildrenPersistent()
-
-    def visibleRange(self):
-        top = self.ui_tree_view.viewport().rect().topLeft()
-        bottom = self.ui_tree_view.viewport().rect().bottomLeft()
-        return range(self.ui_tree_view.indexAt(top).row(),
-                     self.ui_tree_view.indexAt(bottom).row()+1)
-
-    def makeChildrenPersistent(self, index=QtCore.QModelIndex()):
+    def make_children_persistent(self, index=QtCore.QModelIndex()):
         for row in range(0, self.proxy_model.rowCount(index)):
             # no parent
             if index == QtCore.QModelIndex():
@@ -199,6 +206,24 @@ def test():
                  round(v/float(create_size) * 100, 3)
                  )
     LOG.info("top 10 most expensive create data:\n%s", result)
+
+
+def get_ascii(mfile=None):
+    if not mfile:
+        mfile = prompt.set_import_path(
+            default_path=r"C:\Users\Lei\Desktop\maya-example-scene",
+            file_type='*.ma'
+        )
+
+    if not mfile:
+        prompt.message_log(ltype='error', message="Action Canceled by User")
+        return
+
+    if not os.path.exists(mfile):
+        prompt.message_log(ltype='error', message="file not found \n{}".format(mfile))
+        return
+
+    return mfile
 
 
 def show():

@@ -1,6 +1,10 @@
+import math
+import time
+
 from Qt import QtCore
 
 from . import ascii, asciiData
+from .node import dagNode
 
 
 def tokenize_command(line):
@@ -59,7 +63,8 @@ def new(asc, buf_index, buf_desc, buf_size):
 
 
 class LoadThread(QtCore.QThread):
-    progressChanged = QtCore.Signal(int)
+    progress_changed = QtCore.Signal(int)
+    event_occurred = QtCore.Signal(str)
 
     def load(self, path):
         """
@@ -70,7 +75,10 @@ class LoadThread(QtCore.QThread):
         :param path: str. .ma full path
         :return: list of AsciiData. data network
         """
+        start_time = time.time()
+        self.event_occurred.emit('Reading File')
         datas = list()
+
         with open(path) as f:
             asc = ascii.Ascii(path)
             total_size = float(asc.size)
@@ -78,7 +86,7 @@ class LoadThread(QtCore.QThread):
             buf_desc = ''
             buf_size = 0
 
-            cache_size = 0
+            cache_size = 0  # total file size read into cache
             for index, line in enumerate(f):
                 # empty line
                 if not line:
@@ -88,15 +96,17 @@ class LoadThread(QtCore.QThread):
                 if line.startswith('\\'):
                     continue
 
-                # node
+                # new node happens when lines aren't indented
                 if not line.startswith('\t'):
-                    node = new(asc, buf_index, buf_desc, buf_size)
+                    # create node based on previous buffer
+                    datas.append(new(asc, buf_index, buf_desc, buf_size))
 
-                    datas.append(node)
+                    # update load status
                     cache_size += buf_size
-                    progress = int(cache_size / total_size * 100)
-                    self.progressChanged.emit(progress)
+                    progress = int(math.ceil(cache_size / total_size * 100))
+                    self.progress_changed.emit(progress)
 
+                    # store the current node into buffer
                     buf_index = index+1
                     buf_size = len(line)
                     buf_desc = line
@@ -107,7 +117,54 @@ class LoadThread(QtCore.QThread):
                         buf_desc += line
                     buf_size += len(line)
 
+                # handling multi-line nodes
                 if is_open and line.endswith(';\n'):
                     is_open = False
 
+        time_elapsed = round(time.time() - start_time, 3)
+        self.event_occurred.emit('File Load Complete: {}s'.format(time_elapsed))
+
         return datas
+
+    def build(self, datas):
+        """
+        Create node networks from Ascii datas
+
+        :param datas: list of NodeData(s). ascii data starting with 'createNode'
+        :return: NodeData. root node data
+        """
+        start_time = time.time()
+        self.event_occurred.emit('Building DAG Tree')
+        root_node = dagNode.DagNode()
+        nodes = list()
+
+        for i, data in enumerate(datas):
+            if not isinstance(data, asciiData.NodeData):
+                raise TypeError
+
+            node = dagNode.DagNode(data.name, data.dtype, data.size, data.index)
+            nodes.append(node)
+            self.progress_changed.emit(int(float(len(nodes)) / len(datas) * 100))
+
+            parent = None
+            if data.parent:
+                while i > 0:
+                    i -= 1
+                    # sometimes the name contains '|'
+                    if data.parent.endswith(datas[i].name):
+                        parent = nodes[i]
+                        break
+
+                if not parent:
+                    raise ValueError(
+                        'Parent {} not found'.format(data.parent)
+                    )
+            else:
+                parent = root_node
+
+            node.set_parent(parent)
+
+        time_elapsed = round(time.time() - start_time, 3)
+        self.event_occurred.emit('Build Complete: {}s'.format(time_elapsed))
+
+        return root_node
