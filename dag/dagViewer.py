@@ -1,17 +1,17 @@
 import os
 import sys
-from collections import OrderedDict
+
 
 from Qt import QtWidgets, QtCore, QtGui
 from Qt import _loadUi
 from guiUtil import prompt
 
-from mayaAsciiParser import ascii, asciiData, loadThread
-from mayaAsciiParser.node import dagModel, dagNode
+from mayaAsciiParser import asciiData, loader
+from mayaAsciiParser.dag import dagModel, builder
 
 
 MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
-UI_PATH = os.path.join(MODULE_PATH, 'mayaAsciiParser.ui')
+UI_PATH = os.path.join(MODULE_PATH, 'dagViewer.ui')
 
 p = r"C:\Users\Lei\Desktop\maya-example-scene\model\model-village-user-guide.ma"
 # p = r"C:\Users\Lei\Desktop\maya-example-scene\fx\PHX3_BeachWaves_Maya2015\PhoenixFD_Maya2015_BeachWaves.ma"
@@ -67,11 +67,11 @@ class MyProxyModel(QtCore.QSortFilterProxyModel):
         self.setFilterKeyColumn(0)
 
 
-class MainWindow(QtWidgets.QMainWindow):
+class MayaAsciiViewer(QtWidgets.QMainWindow):
     PERCENT_COLUMN = 3
 
     def __init__(self):
-        super(MainWindow, self).__init__()
+        super(MayaAsciiViewer, self).__init__()
         _loadUi(UI_PATH, self)
 
         self._model = None
@@ -89,7 +89,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui_tree_view.setStyleSheet('QWidget{font: 10pt "Bahnschrift";}')
         self.ui_tree_view.setModel(self.proxy_model)
-        self.ui_tree_view.setItemDelegateForColumn(MainWindow.PERCENT_COLUMN, self.delegate)
+        self.ui_tree_view.setItemDelegateForColumn(self.PERCENT_COLUMN, self.delegate)
 
     def connect_signals(self):
         self.ui_tree_view.expanded.connect(self.make_children_persistent)
@@ -126,20 +126,27 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def format_view(self):
         self.ui_tree_view.header().resizeSection(0, 180)
-        self.ui_tree_view.sortByColumn(MainWindow.PERCENT_COLUMN)
+        self.ui_tree_view.sortByColumn(self.PERCENT_COLUMN, QtCore.Qt.DescendingOrder)
         self.make_children_persistent()
         self.ui_tree_view.header().setStretchLastSection(1)
 
     def load_view(self, mfile=None):
-        load_thread = loadThread.LoadThread()
+        # file loading
+        load_thread = loader.LoadThread()
         load_thread.progress_changed.connect(self.update_progress)
         load_thread.event_occurred.connect(self.update_message)
 
-        # file loading
-        datas = [data for data in load_thread.load(mfile) if isinstance(data, asciiData.NodeData)]
+        datas = load_thread.load(mfile)
 
         # model building
-        root = load_thread.build(datas)
+        build_thread = builder.BuildThread()
+        build_thread.progress_changed.connect(self.update_progress)
+        build_thread.event_occurred.connect(self.update_message)
+
+        node_datas = [asciiData.new(data) for data in datas
+                      if isinstance(asciiData.new(data), asciiData.NodeData)]
+
+        root = build_thread.build(node_datas)
         self._model = dagModel.DagModel(root, self)
         self.proxy_model.setSourceModel(self._model)
 
@@ -147,65 +154,13 @@ class MainWindow(QtWidgets.QMainWindow):
         for row in range(0, self.proxy_model.rowCount(index)):
             # no parent
             if index == QtCore.QModelIndex():
-                child = self.proxy_model.index(row, MainWindow.PERCENT_COLUMN)
+                child = self.proxy_model.index(row, self.PERCENT_COLUMN)
 
             # has parent
             else:
-                child = index.child(row, MainWindow.PERCENT_COLUMN)
+                child = index.child(row, self.PERCENT_COLUMN)
 
             self.ui_tree_view.openPersistentEditor(child)
-
-
-def test():
-    datas = asciiData.AsciiData.from_file(p)
-    asc = ascii.Ascii(p)
-    datas = sorted(datas, key=lambda n: n.size, reverse=1)
-    datas = [asciiData.DataFactory(data) for data in datas]
-
-    # size distribution
-    create_size = 0
-    connect_size = 0
-    for data in datas:
-        if isinstance(data, asciiData.NodeData):
-            create_size += data.size
-
-        elif isinstance(data, asciiData.ConnectionData):
-            connect_size += data.size
-
-    LOG.info('createNode size: %s; percent: %s%%', create_size,
-             round(create_size/float(asc.size)*100, 2))
-    LOG.info('connectAttr size: %skb; percent: %s%%', connect_size/1024,
-             round(connect_size/float(asc.size)*100, 2))
-
-    # createNode size distribution
-    ntype = dict()
-    for data in datas:
-        if not isinstance(data, asciiData.NodeData):
-            continue
-
-        if data.dtype not in ntype.keys():
-            ntype[data.dtype] = [data]
-        else:
-            ntype[data.dtype].append(data)
-
-    # add size
-    nsize = dict()
-    for k, v in ntype.items():
-        size = 0
-        for data in v:
-            size += data.size
-        nsize[k] = size
-
-    nsize = OrderedDict(sorted(nsize.items(), key=lambda kv: kv[1], reverse=True))
-
-    result = ''
-    for k, v in nsize.items()[:10]:
-        result += "\t{} --- size: {}kb, percent: {}%\n".format(
-                 k,
-                 v/1024,
-                 round(v/float(create_size) * 100, 3)
-                 )
-    LOG.info("top 10 most expensive create data:\n%s", result)
 
 
 def get_ascii(mfile=None):
@@ -229,7 +184,7 @@ def get_ascii(mfile=None):
 def show():
     global window
     app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow()
+    window = MayaAsciiViewer()
     window.show()
     sys.exit(app.exec_())
 
