@@ -1,7 +1,6 @@
 import os
 import sys
 
-
 from Qt import QtWidgets, QtCore, QtGui
 from Qt import _loadUi
 from guiUtil import prompt
@@ -143,8 +142,8 @@ class MayaAsciiViewer(QtWidgets.QMainWindow):
         build_thread.progress_changed.connect(self.update_progress)
         build_thread.event_occurred.connect(self.update_message)
 
-        node_datas = [asciiData.new(data) for data in datas
-                      if isinstance(asciiData.new(data), asciiData.NodeData)]
+        node_datas = [data for data in datas
+                      if isinstance(data, asciiData.NodeData)]
 
         root = build_thread.build(node_datas)
         self._model = dagModel.DagModel(root, self)

@@ -1,153 +1,7 @@
-"""
-Example Use:
-
-f = 'D:\\testbin\\maya-file.ma'
-
-# get only create nodes
-datas = AsciiData.from_file(path)
-createNodes = [data for data in datas if data.desc.startswith('createNode')]
-
-# output a rough diagnose
-
-output = ''
-# sort
-datas = AsciiData.from_file(path)
-datas = sorted(datas, key=lambda n: n.size, reverse=1)
-
-for data in datas:
-    # filter
-    if data.percent < 0.1:
-        continue
-
-    line = "[line: {index}][{size} mb][{percent}%] {description} \n".format(
-        index=data.index,
-        description=data.description,
-        percent=data.percent,
-        size=round(data.size / float(1024) / float(1024), 3)
-    )
-    output += line
-print(output)
-"""
-
-
 from collections import namedtuple
 
 
-from pipelineUtil.fileSystem import winFile
-
-
-class Ascii(winFile.WinFile):
-    """
-    Class for representing Maya Ascii file
-    """
-
-    def __init__(self, path):
-        super(Ascii, self).__init__(path)
-        if self.ext != '.ma':
-            raise TypeError('File {} is not an Maya Ascii type'.format(self.path))
-
-        self._lineCount = 0
-
-    def update(self):
-        super(Ascii, self).update()
-        self.update_line()
-
-    def update_line(self):
-        with open(self._path) as f:
-            for count, _line in enumerate(f):
-                pass
-            self._lineCount = count
-
-    def read_detail(self, num):
-        with open(self._path) as f:
-            line = f.readline()
-            count = 1
-            is_start = False
-            record_buf = ''
-
-            while line:
-                if is_start:
-                    # reached next node
-                    if not line.startswith('\t'):
-                        break
-
-                    record_buf += line
-
-                if count == num:
-                    if line.startswith('\t'):
-                        break
-
-                    is_start = True
-                    record_buf += line
-
-                count += 1
-                line = f.readline()
-
-        return record_buf
-
-
 AsciiBase = namedtuple('AsciiBase', ['asc', 'index', 'desc', 'size', 'command', 'args'])
-
-
-def new(ascii_node):
-    command, args = tokenize_command(ascii_node.desc)
-    args = [
-        ascii_node.asc,
-        ascii_node.index,
-        ascii_node.desc,
-        ascii_node.size,
-        command,
-        args
-    ]
-
-    if command == 'createNode':
-        return NodeData(*args)
-    else:
-        return AsciiData(*args)
-
-
-def tokenize_command(line):
-    """
-    Tokenize mel command into list of arguments for easier processing
-    Source: https://github.com/mottosso/maya-scenefile-parser/
-
-    :param line: str. mel command
-    :return: tuple (str, list). command name, and list of arguments
-    """
-    command, _, line = line.partition(" ")
-    command = command.lstrip()
-
-    args = list()
-    while True:
-        line = line.strip()
-
-        if not line:
-            break
-
-        # handle quotation marks in string
-        if line[0] in ['\"', "\'"]:
-            string_delim = line[0]
-            escaped = False
-            string_end = len(line)
-
-            # find the closing quote as string end
-            for i in range(1, len(line)):
-                if not escaped and line[i] == string_delim:
-                    string_end = i
-                    break
-                elif not escaped and line[i] == "\\":
-                    escaped = True
-                else:
-                    escaped = False
-
-            arg, line = line[1:string_end], line[string_end+1:]
-
-        else:
-            arg, _, line = line.partition(" ")
-
-        args.append(arg)
-
-    return command, args
 
 
 class AsciiData(AsciiBase):
@@ -212,7 +66,7 @@ class NodeData(AsciiData):
     """
 
     @property
-    def dtype(self):
+    def typ(self):
         """
         Type of the node created (e.g. "transform", "camera", "nurbsSurface")
 
@@ -246,14 +100,6 @@ class NodeData(AsciiData):
         except ValueError:
             return ''
 
-    @property
-    def is_shared(self):
-        return '-s' in self.args
-
-    @property
-    def is_skiped(self):
-        return '-ss' in self.args
-
 
 class ConnectionData(AsciiData):
     """
@@ -261,7 +107,6 @@ class ConnectionData(AsciiData):
 
     https://help.autodesk.com/cloudhelp/2018/ENU/Maya-Tech-Docs/CommandsPython/
     """
-
     @property
     def source(self):
         """
@@ -282,24 +127,58 @@ class ConnectionData(AsciiData):
 
 
 class FileData(AsciiData):
-
-    def is_referenced(self):
+    @property
+    def r(self):
         return '-r' in self.args
 
-    def namespace(self):
+    @property
+    def ns(self):
         try:
             arg_ptr = self.args.index('-ns')
             return self.args[arg_ptr+1]
         except ValueError:
             return ''
 
-    def reference_node(self):
+    @property
+    def rfn(self):
         try:
             arg_ptr = self.args.index('-rfn')
             return self.args[arg_ptr+1]
         except ValueError:
             return ''
 
+    @property
+    def typ(self):
+        try:
+            arg_ptr = self.args.index('-typ')
+            return self.args[arg_ptr+1]
+        except ValueError:
+            return ''
+
+    @property
     def path(self):
         return self.args[-1]
 
+
+class RequirementData(AsciiData):
+    @property
+    def data_type(self):
+        indices = [index for index, el in enumerate(self.args) if el == '-dataType']
+        if not indices:
+            return []
+        return [self.args[index+1] for index in indices]
+
+    @property
+    def node_type(self):
+        indices = [index for index, el in enumerate(self.args) if el == '-nodeType']
+        if not indices:
+            return []
+        return [self.args[index+1] for index in indices]
+
+    @property
+    def product(self):
+        return self.args[-2]
+
+    @property
+    def version(self):
+        return self.args[-1]

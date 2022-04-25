@@ -4,16 +4,16 @@ class DagNode(object):
     Maya Dag node representation for hierarchical relationship
     """
 
-    def __init__(self, name='', ntype='', size=0, index=-1):
+    def __init__(self, name='', typ='', size=0, index=-1):
         """
         Initialization
 
         :param name: str. dag node name
-        :param ntype: str. dag node type
+        :param typ: str. dag node type
         :param size: int. dag node size in bytes
         """
         self.name = name
-        self.ntype = ntype
+        self.typ = typ
         self.size = size
         self.index = index
 

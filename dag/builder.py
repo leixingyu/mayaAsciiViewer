@@ -26,7 +26,7 @@ class BuildThread(QtCore.QThread):
             if not isinstance(data, asciiData.NodeData):
                 raise TypeError
 
-            node = dagNode.DagNode(data.name, data.dtype, data.size, data.index)
+            node = dagNode.DagNode(data.name, data.typ, data.size, data.index)
             nodes.append(node)
             self.progress_changed.emit(int(float(len(nodes)) / len(datas) * 100))
 

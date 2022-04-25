@@ -50,7 +50,7 @@ class DagModel(QtCore.QAbstractItemModel):
             if index.column() == 0:
                 return node.name
             elif index.column() == 1:
-                return node.ntype
+                return node.typ
             elif index.column() == 2:
                 if node.total_size > 1024 * 1024:
                     return '{}MB'.format(
@@ -69,7 +69,7 @@ class DagModel(QtCore.QAbstractItemModel):
             if index.column() == 0:
                 return node.name
             elif index.column() == 1:
-                return node.ntype
+                return node.typ
             elif index.column() == 2:
                 return node.total_size
             elif index.column() == 3:
