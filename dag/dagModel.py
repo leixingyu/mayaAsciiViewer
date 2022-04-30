@@ -133,7 +133,7 @@ class DagModel(QtCore.QAbstractItemModel):
         self.endResetModel()
         return True
 
-    def get_node(self, index):
+    def get_node(self, index=QtCore.QModelIndex()):
         """
         Custom: get DagNode from model index
         :param index: QModelIndex. specified index

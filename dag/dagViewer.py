@@ -1,5 +1,7 @@
 import os
 import sys
+from collections import OrderedDict
+from operator import itemgetter
 
 from Qt import QtWidgets, QtCore, QtGui
 from Qt import _loadUi
@@ -149,6 +151,8 @@ class MayaAsciiViewer(QtWidgets.QMainWindow):
         self._model = dagModel.DagModel(root, self)
         self.proxy_model.setSourceModel(self._model)
 
+        print(get_distribution(root, top=10))
+
     def make_children_persistent(self, index=QtCore.QModelIndex()):
         for row in range(0, self.proxy_model.rowCount(index)):
             # no parent
@@ -160,6 +164,29 @@ class MayaAsciiViewer(QtWidgets.QMainWindow):
                 child = index.child(row, self.PERCENT_COLUMN)
 
             self.ui_tree_view.openPersistentEditor(child)
+
+
+def get_distribution(root, top=-1):
+    nodes = get_children(root)
+
+    typs = OrderedDict()
+    for node in nodes:
+        if node.typ not in typs:
+            typs[node.typ] = node.size
+        else:
+            typs[node.typ] += node.size
+
+    return sorted(typs.items(), key=itemgetter(1), reverse=1)[0:top]
+
+
+def get_children(root):
+    nodes = list()
+    for i in range(root.child_count):
+        node = root.child(i)
+        nodes.append(node)
+        if node.child_count:
+            nodes.extend(get_children(node))
+    return nodes
 
 
 def get_ascii(mfile=None):
