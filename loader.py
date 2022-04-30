@@ -26,6 +26,8 @@ def new(asc, index, desc, size):
         return asciiData.FileData(*args)
     elif command == 'requires':
         return asciiData.RequirementData(*args)
+    elif command == 'fileInfo':
+        return asciiData.InfoData(*args)
     else:
         return asciiData.AsciiData(*args)
 
@@ -137,7 +139,6 @@ class LoadThread(QtCore.QThread):
 
         time_elapsed = round(time.time() - start_time, 3)
         self.event_occurred.emit('File Load Complete: {}s'.format(time_elapsed))
-
         return datas
 
 
@@ -189,4 +190,3 @@ class Ascii(winFile.WinFile):
                 line = f.readline()
 
         return record_buf
-

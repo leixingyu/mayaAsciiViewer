@@ -160,6 +160,16 @@ class FileData(AsciiData):
         return self.args[-1]
 
 
+class InfoData(AsciiData):
+    @property
+    def keyword(self):
+        return self.args[0]
+
+    @property
+    def value(self):
+        return self.args[1]
+
+
 class RequirementData(AsciiData):
     @property
     def data_type(self):
