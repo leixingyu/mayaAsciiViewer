@@ -6,6 +6,7 @@ from operator import itemgetter
 from Qt import QtWidgets, QtCore, QtGui
 from Qt import _loadUi
 from guiUtil import prompt
+from guiUtil.template import pieChart
 
 from mayaAsciiParser import asciiData, loader
 from mayaAsciiParser.dag import dagModel, builder
@@ -117,6 +118,7 @@ class MayaAsciiViewer(QtWidgets.QMainWindow):
         self.clear_view()
         self.load_view(mfile)
         self.format_view()
+        self.load_chart()
 
     def clear_view(self):
         # FIXME: this doesn't work correctly
@@ -149,14 +151,27 @@ class MayaAsciiViewer(QtWidgets.QMainWindow):
         self._model = dagModel.DagModel(root, self)
         self.proxy_model.setSourceModel(self._model)
 
-        print(get_distribution(root, top=10))
+    def load_chart(self):
+        from pipelineUtil.data import palette
+
+        root = self._model.get_node()
+        datas = list()
+        for i, node in enumerate(get_distribution(root, top=10)):
+            prims = palette.TABLEAU_NEW_10
+            data = pieChart.Data(node[0], node[1], prims[i])
+            datas.append(data)
+
+        chart = pieChart.SmartChart(datas)
+        chart.setTitle("Top 10 Node Type")
+        chart.resize(360, 360)
+        chart_view = pieChart.SimpleChartView(chart)
+        self.ui_grid_layout.addWidget(chart_view, 0, 1)
 
     def make_children_persistent(self, index=QtCore.QModelIndex()):
         for row in range(0, self.proxy_model.rowCount(index)):
             # no parent
             if index == QtCore.QModelIndex():
                 child = self.proxy_model.index(row, self.PERCENT_COLUMN)
-
             # has parent
             else:
                 child = index.child(row, self.PERCENT_COLUMN)

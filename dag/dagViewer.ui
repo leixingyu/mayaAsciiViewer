@@ -19,7 +19,7 @@
      <widget class="QLineEdit" name="ui_filter_edit"/>
     </item>
     <item>
-     <layout class="QGridLayout" name="gridLayout">
+     <layout class="QGridLayout" name="ui_grid_layout">
       <item row="0" column="0">
        <widget class="QTreeView" name="ui_tree_view">
         <property name="horizontalScrollBarPolicy">
