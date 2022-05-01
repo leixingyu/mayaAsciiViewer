@@ -6,7 +6,7 @@ from . import dagNode
 from .. import asciiData
 
 
-class BuildThread(QtCore.QThread):
+class BuildThread(QtCore.QObject):
     progress_changed = QtCore.Signal(int)
     event_occurred = QtCore.Signal(str)
 

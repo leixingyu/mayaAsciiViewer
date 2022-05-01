@@ -77,7 +77,7 @@ def tokenize_command(line):
     return command, args
 
 
-class LoadThread(QtCore.QThread):
+class LoadThread(QtCore.QObject):
     progress_changed = QtCore.Signal(int)
     event_occurred = QtCore.Signal(str)
 

@@ -107,7 +107,7 @@ class MayaAsciiViewer(QtWidgets.QMainWindow):
             self.ui_progress.setVisible(True)
 
     def update_message(self, msg):
-        self.statusBar().showMessage(msg, timeout=2)
+        self.statusBar().showMessage(msg, 2000)
 
     def load(self, mfile=None):
         mfile = get_ascii(mfile)
@@ -121,8 +121,6 @@ class MayaAsciiViewer(QtWidgets.QMainWindow):
     def clear_view(self):
         # FIXME: this doesn't work correctly
         if self.ui_tree_view.model().sourceModel():
-            # self._model = None
-            # self.proxy_model.setSourceModel(self._model)
             self.ui_tree_view.model().sourceModel().clear()
 
     def format_view(self):
