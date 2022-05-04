@@ -2,7 +2,7 @@ import math
 import time
 
 from Qt import QtCore
-from pipelineUtil.fileSystem import winFile
+from pipelineUtil.fileSystem import fp
 
 from . import asciiData
 
@@ -142,7 +142,7 @@ class LoadThread(QtCore.QObject):
         return datas
 
 
-class Ascii(winFile.WinFile):
+class Ascii(fp.File):
     """
     Class for representing Maya Ascii file
     """

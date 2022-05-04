@@ -1,9 +1,9 @@
-# Maya Ascii Parser
+# Maya Ascii Viewer (Work In Progress!)
 
 Maya Ascii file (.ma) standalone parser, view essential file information
 without needing to wait for Maya to open.
 
-![preview](https://i.imgur.com/qbbreE1.png)
+![preview](https://imgur.com/j6dcujm.png)
 
 ## Getting Started
 

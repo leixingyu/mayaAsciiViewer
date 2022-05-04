@@ -7,17 +7,61 @@ from Qt import QtWidgets, QtCore, QtGui
 from Qt import _loadUi
 from guiUtil import prompt
 from guiUtil.template import pieChart
+from pipelineUtil.data import palette
 
+
+from mayaAsciiParser.data import audio, config, reference, requirement, info
 from mayaAsciiParser import asciiData, loader
 from mayaAsciiParser.dag import dagModel, builder
 
 
 MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
-UI_PATH = os.path.join(MODULE_PATH, 'dagViewer.ui')
+UI_PATH = os.path.join(MODULE_PATH, 'asciiViewer.ui')
 
 p = r"C:\Users\Lei\Desktop\maya-example-scene\model\model-village-user-guide.ma"
 # p = r"C:\Users\Lei\Desktop\maya-example-scene\fx\PHX3_BeachWaves_Maya2015\PhoenixFD_Maya2015_BeachWaves.ma"
 p = r"C:\Users\Lei\Desktop\maya-example-scene\rig\kayla_v1.9\kayla2017\kayla2017.ma"
+
+
+class DockChart(QtWidgets.QDockWidget):
+
+    def __init__(self, parent=None):
+        super(DockChart, self).__init__(parent)
+
+        self.chart = pieChart.SimpleChart()
+        self.chart.resize(500, 300)
+        chart_view = pieChart.SimpleChartView(self.chart)
+        self.setWidget(chart_view)
+
+    def set_datas(self, platte, datas, titles):
+        s_datas = list()
+        for i, item in enumerate(titles):
+            data = pieChart.Data(item, datas[i], platte[i])
+            s_datas.append(data)
+
+        self.chart.set_series(s_datas)
+
+
+class DockTable(QtWidgets.QDockWidget):
+    def __init__(self, cls, parent=None):
+        super(DockTable, self).__init__(parent)
+
+        self.table = QtWidgets.QTableWidget()
+        self.args = cls._fields
+
+        self.table.setColumnCount(len(self.args))
+        self.table.setHorizontalHeaderLabels(self.args)
+
+        for i in range(self.table.columnCount()):
+            self.table.horizontalHeader().setSectionResizeMode(i, QtWidgets.QHeaderView.Stretch)
+
+        self.setWidget(self.table)
+
+    def set_datas(self, datas):
+        for data in datas:
+            self.table.insertRow(self.table.rowCount())
+            for i, arg in enumerate(self.args):
+                self.table.setItem(self.table.rowCount()-1, i, QtWidgets.QTableWidgetItem(str(data[i])))
 
 
 class PercentageDelegate(QtWidgets.QItemDelegate):
@@ -39,6 +83,7 @@ class PercentageDelegate(QtWidgets.QItemDelegate):
         QProgressBar {{
             border: 1px solid grey;
             text-align: center;
+            color: '';
         }}
 
         QProgressBar::chunk {{
@@ -69,11 +114,11 @@ class MyProxyModel(QtCore.QSortFilterProxyModel):
         self.setFilterKeyColumn(0)
 
 
-class MayaAsciiViewer(QtWidgets.QMainWindow):
+class AsciiViewer(QtWidgets.QMainWindow):
     PERCENT_COLUMN = 3
 
     def __init__(self):
-        super(MayaAsciiViewer, self).__init__()
+        super(AsciiViewer, self).__init__()
         _loadUi(UI_PATH, self)
 
         self._model = None
@@ -83,13 +128,34 @@ class MayaAsciiViewer(QtWidgets.QMainWindow):
         self.ui_progress = QtWidgets.QProgressBar()
 
         self.config()
+
+        self.chart = DockChart()
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.chart)
+
+        self.smart_chart = DockChart()
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.smart_chart)
+
+        self.info_table = DockTable(info.Info)
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.info_table)
+
+        self.req_table = DockTable(requirement.Requirement)
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.req_table)
+
+        self.conf_table = DockTable(config.Config)
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.conf_table)
+
+        self.ref_table = DockTable(reference.Reference)
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.ref_table)
+
+        self.audio_table = DockTable(audio.Audio)
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.audio_table)
+
         self.connect_signals()
 
     def config(self):
         self.ui_progress.setVisible(False)
         self.statusBar().addPermanentWidget(self.ui_progress)
 
-        self.ui_tree_view.setStyleSheet('QWidget{font: 10pt "Bahnschrift";}')
         self.ui_tree_view.setModel(self.proxy_model)
         self.ui_tree_view.setItemDelegateForColumn(self.PERCENT_COLUMN, self.delegate)
 
@@ -118,7 +184,6 @@ class MayaAsciiViewer(QtWidgets.QMainWindow):
         self.clear_view()
         self.load_view(mfile)
         self.format_view()
-        self.load_chart()
 
     def clear_view(self):
         # FIXME: this doesn't work correctly
@@ -151,21 +216,7 @@ class MayaAsciiViewer(QtWidgets.QMainWindow):
         self._model = dagModel.DagModel(root, self)
         self.proxy_model.setSourceModel(self._model)
 
-    def load_chart(self):
-        from pipelineUtil.data import palette
-
-        root = self._model.get_node()
-        datas = list()
-        for i, node in enumerate(get_distribution(root, top=10)):
-            prims = palette.TABLEAU_NEW_10
-            data = pieChart.Data(node[0], node[1], prims[i])
-            datas.append(data)
-
-        chart = pieChart.SmartChart(datas)
-        chart.setTitle("Top 10 Node Type")
-        chart.resize(360, 360)
-        chart_view = pieChart.SimpleChartView(chart)
-        self.ui_grid_layout.addWidget(chart_view, 0, 1)
+        self.set_datas(mfile)
 
     def make_children_persistent(self, index=QtCore.QModelIndex()):
         for row in range(0, self.proxy_model.rowCount(index)):
@@ -178,6 +229,42 @@ class MayaAsciiViewer(QtWidgets.QMainWindow):
 
             self.ui_tree_view.openPersistentEditor(child)
 
+    def set_datas(self, path):
+        datas = loader.LoadThread().load(path)
+
+        # simple chart
+        node = connection = other = 0
+        for data in datas:
+            if isinstance(data, asciiData.NodeData):
+                node += data.size
+            elif isinstance(data, asciiData.ConnectionData):
+                connection += data.size
+            else:
+                other += data.size
+        results = [node, connection, other]
+
+        self.chart.set_datas(palette.PRIM_3, results, ['node', 'connection', 'other'])
+
+        # smart chart
+        root = self._model.get_node()
+        items = get_distribution(root, top=10)
+        self.smart_chart.set_datas(palette.TABLEAU_NEW_10, list(items.values()), list(items.keys()))
+
+        infos = info.Info.from_datas(datas)
+        self.info_table.set_datas(infos)
+
+        reqs = requirement.Requirement.from_datas(datas)
+        self.req_table.set_datas(reqs)
+
+        conf = config.Config.from_datas(datas)
+        self.conf_table.set_datas([conf])
+
+        refs = reference.Reference.from_datas(datas)
+        self.ref_table.set_datas(refs)
+
+        audios = audio.Audio.from_datas(datas)
+        self.audio_table.set_datas(audios)
+
 
 def get_distribution(root, top=-1):
     nodes = get_children(root)
@@ -189,7 +276,7 @@ def get_distribution(root, top=-1):
         else:
             typs[node.typ] += node.size
 
-    return sorted(typs.items(), key=itemgetter(1), reverse=1)[0:top]
+    return OrderedDict(sorted(typs.items(), key=itemgetter(1), reverse=1)[0:top])
 
 
 def get_children(root):
@@ -208,11 +295,9 @@ def get_ascii(mfile=None):
             default_path=r"C:\Users\Lei\Desktop\maya-example-scene",
             file_type='*.ma'
         )
-
     if not mfile:
         prompt.message_log(ltype='error', message="Action Canceled by User")
         return
-
     if not os.path.exists(mfile):
         prompt.message_log(ltype='error', message="file not found \n{}".format(mfile))
         return
@@ -221,10 +306,16 @@ def get_ascii(mfile=None):
 
 
 def show():
+    from qt_material import apply_stylesheet
     global window
+
     app = QtWidgets.QApplication(sys.argv)
-    window = MayaAsciiViewer()
+
+    apply_stylesheet(app, theme='light_blue.xml')
+
+    window = AsciiViewer()
     window.show()
+
     sys.exit(app.exec_())
 
 
