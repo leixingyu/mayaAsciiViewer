@@ -4,7 +4,7 @@ import time
 from Qt import QtCore
 from pipelineUtil.fileSystem import fp
 
-from . import asciiData
+from . import asciiBlock
 
 
 def new(asc, index, desc, size):
@@ -19,17 +19,17 @@ def new(asc, index, desc, size):
     ]
 
     if command == 'createNode':
-        return asciiData.NodeData(*args)
+        return asciiBlock.NodeBlock(*args)
     elif command == 'connectAttr':
-        return asciiData.ConnectionData(*args)
+        return asciiBlock.ConnectionBlock(*args)
     elif command == 'file':
-        return asciiData.FileData(*args)
+        return asciiBlock.FileBlock(*args)
     elif command == 'requires':
-        return asciiData.RequirementData(*args)
+        return asciiBlock.RequirementBlock(*args)
     elif command == 'fileInfo':
-        return asciiData.InfoData(*args)
+        return asciiBlock.InfoBlock(*args)
     else:
-        return asciiData.AsciiData(*args)
+        return asciiBlock.AsciiBlock(*args)
 
 
 def tokenize_command(line):

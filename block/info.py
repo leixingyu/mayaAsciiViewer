@@ -12,19 +12,17 @@ fileInfo "license" "student";
 
 from collections import namedtuple
 
-from .. import asciiData
+from .. import asciiBlock
 
 InfoBase = namedtuple('InfoBase', ['keyword', 'value'])
 
 
 class Info(InfoBase):
     @classmethod
-    def from_datas(cls, datas):
+    def from_blocks(cls, blocks):
         infos = list()
-        for data in datas:
-            if not isinstance(data, asciiData.InfoData):
+        for block in blocks:
+            if not isinstance(block, asciiBlock.InfoBlock):
                 continue
-            infos.append(InfoBase(data.keyword, data.value))
+            infos.append(InfoBase(block.keyword, block.value))
         return infos
-
-

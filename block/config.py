@@ -1,7 +1,6 @@
 """
 Example:
 
-
 createNode script -n "sceneConfigurationScriptNode";
     rename -uid "ABFFC671-4DDD-54FB-0647-B594FEE16B08";
     setAttr ".b" -type "string" "playbackOptions -min 258 -max 317 -ast 1 -aet 2160 ";
@@ -11,7 +10,7 @@ createNode script -n "sceneConfigurationScriptNode";
 import re
 from collections import namedtuple
 
-from .. import asciiData
+from .. import asciiBlock
 
 
 ConfigBase = namedtuple('ConfigBase', ['min', 'max', 'start', 'end'])
@@ -19,15 +18,15 @@ ConfigBase = namedtuple('ConfigBase', ['min', 'max', 'start', 'end'])
 
 class Config(ConfigBase):
     @classmethod
-    def from_datas(cls, datas):
-        for data in datas:
-            if not isinstance(data, asciiData.NodeData):
+    def from_blocks(cls, blocks):
+        for block in blocks:
+            if not isinstance(block, asciiBlock.NodeBlock):
                 continue
     
-            if data.name != 'sceneConfigurationScriptNode':
+            if block.name != 'sceneConfigurationScriptNode':
                 continue
     
-            detail = data.asc.read_detail(data.index)
+            detail = block.asc.read_detail(block.index)
             # default
             script_re = re.compile('.*setAttr ".b" -type "string" "(.*)";')
             script = script_re.search(detail).group(1)

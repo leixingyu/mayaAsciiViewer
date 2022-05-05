@@ -9,22 +9,27 @@ requires "mtoa" "3.2.0.2";
 
 from collections import namedtuple
 
-from .. import asciiData
+from .. import asciiBlock
 
 
-RequirementBase = namedtuple('RequirementBase', ['product', 'version', 'data_type', 'node_type'])
+RequirementBase = namedtuple('RequirementBase',
+                             ['product', 'version', 'data_type', 'node_type'])
 
 
 class Requirement(RequirementBase):
     @classmethod
-    def from_datas(cls, datas):
+    def from_blocks(cls, blocks):
         references = list()
-        for data in datas:
-            if not isinstance(data, asciiData.RequirementData):
+        for block in blocks:
+            if not isinstance(block, asciiBlock.RequirementBlock):
                 continue
     
             references.append(
-                RequirementBase(data.product, data.version, data.data_type, data.data_type)
+                RequirementBase(
+                    block.product,
+                    block.version,
+                    block.data_type,
+                    block.data_type)
             )
     
         return references

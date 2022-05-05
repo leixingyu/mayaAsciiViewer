@@ -1,10 +1,27 @@
 from collections import namedtuple
 
 
-AsciiBase = namedtuple('AsciiBase', ['asc', 'index', 'desc', 'size', 'command', 'args'])
+AsciiBase = namedtuple('AsciiBase',
+                       ['asc', 'index', 'desc', 'size', 'command', 'args'])
 
 
-class AsciiData(AsciiBase):
+def get_distribution(blocks):
+    node = connection = other = 0
+    for block in blocks:
+        if isinstance(block, NodeBlock):
+            node += block.size
+        elif isinstance(block, ConnectionBlock):
+            connection += block.size
+        else:
+            other += block.size
+    return [
+        ('node', node),
+        ('connection', connection),
+        ('other', other)
+    ]
+
+
+class AsciiBlock(AsciiBase):
     """
     An ascii string representation of an abstract node
     """
@@ -42,7 +59,7 @@ class AsciiData(AsciiBase):
         :param args: list. parent mel command's arguments (i.e. [transform,
         -s, -n, "persp"])
         """
-        return super(AsciiData, cls).__new__(cls, asc, index, desc, size, command, args)
+        return super(AsciiBlock, cls).__new__(cls, asc, index, desc, size, command, args)
 
     def __str__(self):
         return '{}({}, {}, {})'.format(
@@ -58,7 +75,7 @@ class AsciiData(AsciiBase):
         return round(percent, 3)
 
 
-class NodeData(AsciiData):
+class NodeBlock(AsciiBlock):
     """
     An ascii string representation of a createNode mel command
 
@@ -101,7 +118,7 @@ class NodeData(AsciiData):
             return ''
 
 
-class ConnectionData(AsciiData):
+class ConnectionBlock(AsciiBlock):
     """
     An ascii string representation of a connectAttr mel command
 
@@ -117,7 +134,7 @@ class ConnectionData(AsciiData):
         return self.args[0]
 
     @property
-    def destination(self):
+    def dest(self):
         """
         Destination attribute of the connected dependency
 
@@ -126,13 +143,13 @@ class ConnectionData(AsciiData):
         return self.args[1]
 
 
-class FileData(AsciiData):
+class FileBlock(AsciiBlock):
     @property
-    def r(self):
+    def is_ref(self):
         return '-r' in self.args
 
     @property
-    def ns(self):
+    def namespace(self):
         try:
             arg_ptr = self.args.index('-ns')
             return self.args[arg_ptr+1]
@@ -140,7 +157,7 @@ class FileData(AsciiData):
             return ''
 
     @property
-    def rfn(self):
+    def ref_node(self):
         try:
             arg_ptr = self.args.index('-rfn')
             return self.args[arg_ptr+1]
@@ -160,7 +177,7 @@ class FileData(AsciiData):
         return self.args[-1]
 
 
-class InfoData(AsciiData):
+class InfoBlock(AsciiBlock):
     @property
     def keyword(self):
         return self.args[0]
@@ -170,7 +187,7 @@ class InfoData(AsciiData):
         return self.args[1]
 
 
-class RequirementData(AsciiData):
+class RequirementBlock(AsciiBlock):
     @property
     def data_type(self):
         indices = [index for index, el in enumerate(self.args) if el == '-dataType']

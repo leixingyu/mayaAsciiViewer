@@ -11,25 +11,33 @@ createNode audio -n "happy_frog";
 import re
 from collections import namedtuple
 
-from .. import asciiData
+from .. import asciiBlock
 
 
-AudioBase = namedtuple('AudioBase', ['name', 'path', 'end_frame', 'source_end', 'source_start', 'offset', 'silence'])
+AudioBase = namedtuple('AudioBase',
+                       ['name',
+                        'path',
+                        'end_frame',
+                        'source_end',
+                        'source_start',
+                        'offset',
+                        'silence']
+                       )
 
 
 class Audio(AudioBase):
     @classmethod
-    def from_datas(cls, datas):
+    def blocks(cls, blocks):
         audios = list()
 
-        for data in datas:
-            if not isinstance(data, asciiData.NodeData):
+        for block in blocks:
+            if not isinstance(block, asciiBlock.NodeBlock):
                 continue
 
-            if data.typ != 'audio':
+            if block.typ != 'audio':
                 continue
 
-            detail = data.asc.read_detail(data.index)
+            detail = block.asc.read_detail(block.index)
             # default
             end_re = re.compile(
                 r'.*setAttr ".se" ([-+]?[0-9]*\.?[0-9]*);')  # source end
@@ -54,6 +62,6 @@ class Audio(AudioBase):
                 detail) else 0
 
             audios.append(
-                cls(data.name, path, endf, end, start, offset, silence))
+                cls(block.name, path, endf, end, start, offset, silence))
 
         return audios

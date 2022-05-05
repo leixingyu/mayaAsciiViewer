@@ -14,14 +14,14 @@ class DagModel(QtCore.QAbstractItemModel):
         :param root: DagNode. the invisible scene root node of the model
         """
         super(DagModel, self).__init__(parent)
-        self._root_node = root
+        self.__root_node = root
 
     def rowCount(self, parent=QtCore.QModelIndex()):
         """
         Override
         """
         if not parent.isValid():
-            parent_node = self._root_node
+            parent_node = self.__root_node
         else:
             parent_node = parent.internalPointer()
 
@@ -62,7 +62,7 @@ class DagModel(QtCore.QAbstractItemModel):
                 )
             elif index.column() == 3:
                 return round(
-                        node.total_size/float(self._root_node.total_size)*100
+                    node.total_size / float(self.__root_node.total_size) * 100
                     )
 
         elif role == DagModel.sort_role:
@@ -119,27 +119,47 @@ class DagModel(QtCore.QAbstractItemModel):
         current_node = self.get_node(index)
         parent_node = current_node.parent
 
-        if parent_node == self._root_node:
+        if parent_node == self.__root_node:
             return QtCore.QModelIndex()
 
-        return self.createIndex(parent_node.row(), 0, parent_node)
+        return self.createIndex(parent_node.row, 0, parent_node)
 
     def clear(self):
         """
         Custom: clear the model data
         """
         self.beginResetModel()
-        self._root_node = dagNode.DagNode()
+        self.__root_node = dagNode.DagNode()
         self.endResetModel()
         return True
 
     def get_node(self, index=QtCore.QModelIndex()):
         """
         Custom: get DagNode from model index
+
         :param index: QModelIndex. specified index
         """
         if index.isValid():
             current_node = index.internalPointer()
             if current_node:
                 return current_node
-        return self._root_node
+        return self.__root_node
+
+
+class DagProxyModel(QtCore.QSortFilterProxyModel):
+    """
+    For configuring sorting and filtering
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(DagProxyModel, self).__init__(*args, **kwargs)
+
+        # sorting
+        self.setDynamicSortFilter(False)
+        self.setSortRole(DagModel.sort_role)
+        self.setSortCaseSensitivity(QtCore.Qt.CaseInsensitive)
+
+        # filtering
+        self.setFilterCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        self.setFilterRole(DagModel.filter_role)
+        self.setFilterKeyColumn(0)

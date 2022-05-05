@@ -3,46 +3,48 @@ import time
 from Qt import QtCore
 
 from . import dagNode
-from .. import asciiData
+from .. import asciiBlock
 
 
 class BuildThread(QtCore.QObject):
     progress_changed = QtCore.Signal(int)
     event_occurred = QtCore.Signal(str)
 
-    def build(self, datas):
+    def build(self, blocks):
         """
-        Create node networks from NodeData
+        Create node networks from Ascii data blocks
 
-        :param datas: list of NodeData(s). ascii data starting with 'createNode'
-        :return: NodeData. root node data
+        :param blocks: list of AsciiBlock(s). ascii block starting with 'createNode'
+        :return: DagNode. root dag node
         """
+        # filter data blocks to NodeBlock type
+        blocks = [b for b in blocks if isinstance(b, asciiBlock.NodeBlock)]
+
         start_time = time.time()
         self.event_occurred.emit('Building DAG Tree')
         root_node = dagNode.DagNode()
         nodes = list()
 
-        for i, data in enumerate(datas):
-            if not isinstance(data, asciiData.NodeData):
+        for i, block in enumerate(blocks):
+            if not isinstance(block, asciiBlock.NodeBlock):
                 raise TypeError
 
-            node = dagNode.DagNode(data.name, data.typ, data.size, data.index)
+            node = dagNode.DagNode(block.name, block.typ, block.size, block.index)
             nodes.append(node)
-            self.progress_changed.emit(int(float(len(nodes)) / len(datas) * 100))
+            self.progress_changed.emit(int(float(len(nodes)) / len(blocks) * 100))
 
             parent = None
-            if data.parent:
+            if block.parent:
                 while i > 0:
                     i -= 1
                     # sometimes the name contains '|'
-                    if data.parent.endswith(datas[i].name):
+                    if block.parent.endswith(blocks[i].name):
                         parent = nodes[i]
                         break
 
                 if not parent:
-                    raise ValueError(
-                        'Parent {} not found'.format(data.parent)
-                    )
+
+                    raise ValueError('Parent {} not found'.format(block.parent))
             else:
                 parent = root_node
 
