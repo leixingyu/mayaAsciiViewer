@@ -27,12 +27,6 @@
     <property name="bottomMargin">
      <number>10</number>
     </property>
-    <item>
-     <widget class="QLineEdit" name="ui_filter_edit"/>
-    </item>
-    <item>
-     <layout class="QGridLayout" name="ui_grid_layout"/>
-    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -48,7 +42,11 @@
     <property name="title">
      <string>File</string>
     </property>
+    <property name="toolTipsVisible">
+     <bool>true</bool>
+    </property>
     <addaction name="ui_open_action"/>
+    <addaction name="ui_reset_action"/>
     <addaction name="ui_clear_action"/>
    </widget>
    <addaction name="menuFile"/>
@@ -62,6 +60,17 @@
   <action name="ui_clear_action">
    <property name="text">
     <string>Clear</string>
+   </property>
+   <property name="toolTip">
+    <string>Clear all data in widget</string>
+   </property>
+  </action>
+  <action name="ui_reset_action">
+   <property name="text">
+    <string>Reset</string>
+   </property>
+   <property name="toolTip">
+    <string>Reset widget to default position</string>
    </property>
   </action>
  </widget>

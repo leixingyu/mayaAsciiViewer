@@ -3,12 +3,12 @@ import sys
 
 from Qt import QtWidgets, QtCore, QtGui
 from Qt import _loadUi
-from guiUtil.template import pieChart
+from guiUtil.template import pieChart, table
 from pipelineUtil.data import palette
 
 from mayaAsciiParser import asciiBlock, asciiLoader
 from mayaAsciiParser.block import audio, config, reference, requirement, info
-from mayaAsciiParser.dag import dagModel, dagBuilder, dagView, dagNode
+from mayaAsciiParser.dag import dagBuilder, dagView, dagNode
 
 
 MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -18,8 +18,9 @@ PROJECT_DIR = r"C:\Users\Lei\Desktop\maya-example-scene"
 
 class DockChart(QtWidgets.QDockWidget):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent):
         super(DockChart, self).__init__(parent)
+        self.__parent = parent
 
         self.__chart = pieChart.SimpleChart()
         self.__chart.resize(500, 300)
@@ -27,27 +28,51 @@ class DockChart(QtWidgets.QDockWidget):
         chart_view = pieChart.SimpleChartView(self.__chart)
         self.setWidget(chart_view)
 
+        self.dock()
+
+    def dock(self, position=QtCore.Qt.RightDockWidgetArea):
+        self.__parent.addDockWidget(position, self)
+
+    def reset(self):
+        if self.isFloating():
+            self.setFloating(False)
+        if not self.isVisible():
+            self.setVisible(True)
+        self.dock()
+
     def add_slice(self, name, value, color):
         self.__chart.add_slice(name, value, color)
 
+    def clear(self):
+        self.reset()
+        self.__chart.clear()
+
 
 class DockTable(QtWidgets.QDockWidget):
-    def __init__(self, cls, parent=None):
+    def __init__(self, cls, parent):
         super(DockTable, self).__init__(parent)
         self.setWindowTitle(cls.__name__)
+        self.__parent = parent
 
         self.__args = cls._fields
-        self.__table = QtWidgets.QTableWidget()
+        self.__table = table.SmartTable()
         self.__table.setColumnCount(len(self.__args))
-        self.__table.setHorizontalHeaderLabels(self.__args)
-
-        for i in range(self.__table.columnCount()):
-            self.__table.horizontalHeader().setSectionResizeMode(
-                i,
-                QtWidgets.QHeaderView.Interactive
-            )
+        self.__table.setHorizontalHeaderLabels(
+            [label.replace('_', ' ') for label in self.__args]
+        )
 
         self.setWidget(self.__table)
+        self.dock()
+
+    def dock(self, position=QtCore.Qt.LeftDockWidgetArea):
+        self.__parent.addDockWidget(position, self)
+
+    def reset(self):
+        if self.isFloating():
+            self.setFloating(False)
+        if not self.isVisible():
+            self.setVisible(True)
+        self.dock()
 
     def add_entry(self, values):
         self.__table.insertRow(self.__table.rowCount())
@@ -58,6 +83,10 @@ class DockTable(QtWidgets.QDockWidget):
                 QtWidgets.QTableWidgetItem(str(values[i]))
             )
 
+    def clear(self):
+        self.reset()
+        self.__table.setRowCount(0)
+
 
 class AsciiViewer(QtWidgets.QMainWindow):
 
@@ -67,29 +96,53 @@ class AsciiViewer(QtWidgets.QMainWindow):
 
         self.__blocks = None
 
-        self.ui_tree_view = dagView.DagView()
-        self.ui_grid_layout.addWidget(self.ui_tree_view, 0, 0)
+        self.ui_dag_widget = dagView.DagWidget()
+        self.setCentralWidget(self.ui_dag_widget)
 
         # create dock widgets
-        self.ui_size_chart = DockChart()
-        self.ui_type_chart = DockChart()
-        self.ui_info_table = DockTable(info.Info)
-        self.ui_req_table = DockTable(requirement.Requirement)
-        self.ui_config_table = DockTable(config.Config)
-        self.ui_ref_table = DockTable(reference.Reference)
-        self.ui_audio_table = DockTable(audio.Audio)
+        self.ui_size_chart = DockChart(self)
+        self.ui_type_chart = DockChart(self)
 
-        for chart in [self.ui_size_chart, self.ui_type_chart]:
-            self.addDockWidget(QtCore.Qt.RightDockWidgetArea, chart)
-
-        for table in [self.ui_info_table, self.ui_ref_table, self.ui_config_table, self.ui_req_table, self.ui_audio_table]:
-            self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, table)
+        self.ui_info_table = DockTable(info.Info, self)
+        self.ui_req_table = DockTable(requirement.Requirement, self)
+        self.ui_config_table = DockTable(config.Config, self)
+        self.ui_ref_table = DockTable(reference.Reference, self)
+        self.ui_audio_table = DockTable(audio.Audio, self)
 
         self.ui_progress = QtWidgets.QProgressBar()
         self.ui_progress.setVisible(False)
         self.statusBar().addPermanentWidget(self.ui_progress)
 
         self.ui_open_action.triggered.connect(self.load)
+        self.ui_clear_action.triggered.connect(self.clear)
+        self.ui_reset_action.triggered.connect(self.reset)
+
+    def clear(self):
+        # the order matters
+        for widget in [
+            self.ui_size_chart,
+            self.ui_type_chart,
+            self.ui_info_table,
+            self.ui_req_table,
+            self.ui_config_table,
+            self.ui_ref_table,
+            self.ui_audio_table,
+        ]:
+            widget.clear()
+
+        self.ui_dag_widget.clear()
+
+    def reset(self):
+        for widget in [
+            self.ui_size_chart,
+            self.ui_type_chart,
+            self.ui_info_table,
+            self.ui_req_table,
+            self.ui_config_table,
+            self.ui_ref_table,
+            self.ui_audio_table,
+        ]:
+            widget.reset()
 
     def load(self):
         from guiUtil import prompt
@@ -97,7 +150,6 @@ class AsciiViewer(QtWidgets.QMainWindow):
         mfile = prompt.get_path_import(default_path=PROJECT_DIR, typ='*.ma')
 
         if not mfile:
-            prompt.message("Cancelled by User", prompt.ERROR)
             return
 
         if not os.path.exists(mfile):
@@ -106,6 +158,7 @@ class AsciiViewer(QtWidgets.QMainWindow):
 
         self.__get_blocks(mfile)
 
+        self.clear()
         self.update()
 
     def update(self):
@@ -134,8 +187,8 @@ class AsciiViewer(QtWidgets.QMainWindow):
                 palette.TABLEAU_NEW_10[i]
             )
 
-        self.ui_tree_view.set_root(root)
-        self.ui_tree_view.update()
+        self.ui_dag_widget.set_root(root)
+        self.ui_dag_widget.update()
 
     def __update_size_chart(self):
         # simple chart

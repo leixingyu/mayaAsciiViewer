@@ -29,7 +29,7 @@ class Requirement(RequirementBase):
                     block.product,
                     block.version,
                     block.data_type,
-                    block.data_type)
+                    block.node_type)
             )
     
         return references

@@ -17,9 +17,9 @@ from .. import asciiBlock
 AudioBase = namedtuple('AudioBase',
                        ['name',
                         'path',
-                        'end_frame',
-                        'source_end',
                         'source_start',
+                        'source_end',
+                        'end_frame',
                         'offset',
                         'silence']
                        )
@@ -62,6 +62,7 @@ class Audio(AudioBase):
                 detail) else 0
 
             audios.append(
-                cls(block.name, path, endf, end, start, offset, silence))
+                cls(block.name, path, start, end, endf, offset, silence)
+            )
 
         return audios
