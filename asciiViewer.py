@@ -13,7 +13,8 @@ from mayaAsciiParser.dag import dagBuilder, dagView, dagNode
 
 MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
 UI_PATH = os.path.join(MODULE_PATH, 'asciiViewer.ui')
-PROJECT_DIR = r"C:\Users\Lei\Desktop\maya-example-scene"
+ICON_PATH = os.path.join(MODULE_PATH, 'icon.png')
+PROJECT_DIR = os.path.expandvars("%USERPROFILE%\\Desktop")
 
 
 class DockChart(QtWidgets.QDockWidget):
@@ -52,10 +53,12 @@ class DockTable(QtWidgets.QDockWidget):
     def __init__(self, cls, parent):
         super(DockTable, self).__init__(parent)
         self.setWindowTitle(cls.__name__)
+
         self.__parent = parent
 
         self.__args = cls._fields
         self.__table = table.SmartTable()
+        self.__table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.__table.setColumnCount(len(self.__args))
         self.__table.setHorizontalHeaderLabels(
             [label.replace('_', ' ') for label in self.__args]
@@ -93,6 +96,7 @@ class AsciiViewer(QtWidgets.QMainWindow):
     def __init__(self):
         super(AsciiViewer, self).__init__()
         _loadUi(UI_PATH, self)
+        self.resize(1500, 800)
 
         self.__blocks = None
 
@@ -101,7 +105,9 @@ class AsciiViewer(QtWidgets.QMainWindow):
 
         # create dock widgets
         self.ui_size_chart = DockChart(self)
+        self.ui_size_chart.setWindowTitle('Size distribution chart')
         self.ui_type_chart = DockChart(self)
+        self.ui_type_chart.setWindowTitle('Dag type distribution chart')
 
         self.ui_info_table = DockTable(info.Info, self)
         self.ui_req_table = DockTable(requirement.Requirement, self)
@@ -238,12 +244,17 @@ def show():
     from qt_material import apply_stylesheet
     global window
 
+    import ctypes
+    app_id = 'xingyulei.asciiviewer.1-0-0'
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+
     extra = {
         'font_size': '10px',
         'density_scale': '-1',
     }
 
     app = QtWidgets.QApplication(sys.argv)
+    app.setWindowIcon(QtGui.QIcon(ICON_PATH))
     apply_stylesheet(app, theme='light_blue.xml', extra=extra)
 
     window = AsciiViewer()

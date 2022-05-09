@@ -62,7 +62,8 @@ class DagModel(QtCore.QAbstractItemModel):
                 )
             elif index.column() == 3:
                 return round(
-                    node.total_size / float(self.__root_node.total_size) * 100
+                    node.total_size / float(self.__root_node.total_size) * 100,
+                    1
                     )
 
         elif role == DagModel.sort_role:

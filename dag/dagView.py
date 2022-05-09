@@ -7,8 +7,8 @@ class PercentageDelegate(QtWidgets.QItemDelegate):
 
     def createEditor(self, parent, option, index):
         editor = QtWidgets.QProgressBar(parent)
-        editor.setMinimum(0)
-        editor.setMaximum(100)
+        editor.setMinimum(0.0)
+        editor.setMaximum(100.0)
         return editor
 
     def setEditorData(self, editor, index):
@@ -37,6 +37,9 @@ class PercentageDelegate(QtWidgets.QItemDelegate):
         )
 
         editor.setValue(model_value)
+        editor.setFormat('{}%'.format(model_value))
+        if model_value < 0.1:
+            editor.setFormat('<0.1%')
         editor.setStyleSheet(style)
 
 
@@ -46,7 +49,10 @@ class DagView(QtWidgets.QTreeView):
     def __init__(self, parent=None):
         super(DagView, self).__init__(parent)
 
-        self.__model = None
+        self.setSortingEnabled(True)
+        self.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+
+        self.__model = dagModel.DagModel('')
         self.proxy_model = dagModel.DagProxyModel(self)
         self.__delegate = PercentageDelegate(self)
 
@@ -58,6 +64,8 @@ class DagView(QtWidgets.QTreeView):
     def set_root(self, node):
         self.__model = dagModel.DagModel(node, self)
         self.proxy_model.setSourceModel(self.__model)
+        # after remove filtering
+        self.proxy_model.rowsInserted.connect(self.__make_children_persistent)
 
     def clear(self):
         # FIXME: this doesn't work correctly
