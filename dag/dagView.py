@@ -1,49 +1,17 @@
+"""
+A view module that supports Dag node for Model View Programming in Qt
+"""
+
+
 from Qt import QtWidgets, QtCore, QtGui
 
 from . import dagModel
 
 
-class PercentageDelegate(QtWidgets.QItemDelegate):
-
-    def createEditor(self, parent, option, index):
-        editor = QtWidgets.QProgressBar(parent)
-        editor.setMinimum(0.0)
-        editor.setMaximum(100.0)
-        return editor
-
-    def setEditorData(self, editor, index):
-        model_value = index.model().data(index, QtCore.Qt.EditRole)
-        color = [
-            '#c0ff33',
-            '#feff5c',
-            '#ffc163',
-            '#ffa879',
-            '#fb4b4b',
-            '#fb4b4b'
-        ][int(model_value / 20)]
-
-        style = (
-            """
-            QProgressBar {{
-                border: 1px solid grey;
-                text-align: center;
-                color: '';
-            }}
-
-            QProgressBar::chunk {{
-                background-color: {};
-            }}
-            """.format(color)
-        )
-
-        editor.setValue(model_value)
-        editor.setFormat('{}%'.format(model_value))
-        if model_value < 0.1:
-            editor.setFormat('<0.1%')
-        editor.setStyleSheet(style)
-
-
 class DagView(QtWidgets.QTreeView):
+    """
+    Main Dag tree view
+    """
     PERCENT_COLUMN = 3
 
     def __init__(self, parent=None):
@@ -89,6 +57,10 @@ class DagView(QtWidgets.QTreeView):
 
 
 class DagWidget(QtWidgets.QWidget):
+    """
+    A widget wrapper for main Dag view that also includes a line edit for
+    filtering
+    """
     def __init__(self):
         super(DagWidget, self).__init__()
 
@@ -113,3 +85,51 @@ class DagWidget(QtWidgets.QWidget):
     def clear(self):
         self.ui_filter_edit.setText('')
         self.ui_dag_view.clear()
+
+
+class PercentageDelegate(QtWidgets.QItemDelegate):
+    """
+    For creating a qt graphic delegate used in the main dag view
+    """
+    def createEditor(self, parent, option, index):
+        """
+        Override
+        """
+        editor = QtWidgets.QProgressBar(parent)
+        editor.setMinimum(0.0)
+        editor.setMaximum(100.0)
+        return editor
+
+    def setEditorData(self, editor, index):
+        """
+        Override
+        """
+        model_value = index.model().data(index, QtCore.Qt.EditRole)
+        color = [
+            '#c0ff33',
+            '#feff5c',
+            '#ffc163',
+            '#ffa879',
+            '#fb4b4b',
+            '#fb4b4b'
+        ][int(model_value / 20)]
+
+        style = (
+            """
+            QProgressBar {{
+                border: 1px solid grey;
+                text-align: center;
+                color: '';
+            }}
+
+            QProgressBar::chunk {{
+                background-color: {};
+            }}
+            """.format(color)
+        )
+
+        editor.setValue(model_value)
+        editor.setFormat('{}%'.format(model_value))
+        if model_value < 0.1:
+            editor.setFormat('<0.1%')
+        editor.setStyleSheet(style)

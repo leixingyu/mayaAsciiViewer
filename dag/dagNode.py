@@ -1,8 +1,22 @@
+"""
+A simplified data structure that represents a maya Dag node, which is
+essentially a node with acyclic parenting. Used mostly in conjunction with
+dagModel
+"""
+
+
 from collections import OrderedDict
 from operator import itemgetter
 
 
 def get_distribution(nodes, top=-1):
+    """
+    Get the distribution of Dag node types ranked by size
+
+    :param nodes: list of DagNodes. list of Dag nodes
+    :param top: int. how many types to be listed
+    :return: list: list of tuples (node name, node size)
+    """
     typs = OrderedDict()
     for node in nodes:
         if node.typ not in typs:
@@ -32,9 +46,8 @@ def get_children(root):
 
 class DagNode(object):
     """
-    Maya Dag node representation for hierarchical relationship
+    Maya Dag node representation
     """
-
     def __init__(self, name='', typ='', size=0, index=-1):
         """
         Initialization
@@ -86,6 +99,11 @@ class DagNode(object):
 
     @property
     def total_size(self):
+        """
+        Size of the node itself and all of its children nodes
+
+        :return: int. total size of the node hierarchy
+        """
         return self.__total_size
 
     @property

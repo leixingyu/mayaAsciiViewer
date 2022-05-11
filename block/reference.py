@@ -1,7 +1,19 @@
 """
-Example:
+Module used to parse references information from ascii data blocks
 
-file -r -ns "tracer" -dr 1 -rfn "tracerRN" -op "v=0;" -typ "mayaAscii" "C:/Users/tracer.ma";
+Scripting:
+```
+# all references paths
+refs = Reference.from_blocks(blocks)
+for ref in refs:
+    print(ref.path)
+```
+
+Example:
+```
+file -r -ns "test" -dr 1 -rfn "testRN" -op "v=0;" -typ "mayaAscii" "C:/test.ma";
+```
+
 """
 
 from collections import namedtuple
@@ -16,6 +28,13 @@ ReferenceBase = namedtuple('ReferenceBase',
 class Reference(ReferenceBase):
     @classmethod
     def from_blocks(cls, blocks):
+        """
+        Create references data objects from ascii data blocks
+
+        :param blocks: list of AsciiBlock.
+                       normally generated from 'asciiLoader.py'
+        :return: list of References. references data objects
+        """
         references = list()
         for block in blocks:
             if not isinstance(block, asciiBlock.FileBlock):
@@ -30,4 +49,5 @@ class Reference(ReferenceBase):
                 block.namespace,
                 block.typ)
             )
+
         return references

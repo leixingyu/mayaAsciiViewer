@@ -1,3 +1,8 @@
+"""
+A model that supports Dag node for Model View Programming in Qt
+"""
+
+
 from Qt import QtWidgets, QtCore, QtGui
 
 from . import dagNode

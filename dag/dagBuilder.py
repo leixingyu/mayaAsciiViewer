@@ -1,3 +1,20 @@
+"""
+Module to maya dag node tree building
+
+Example
+```python
+builder = Builder()
+
+# the invisible root of all top level dag nodes
+root = builder.build(blocks)
+```
+
+`progress_changed` signal can be connected to progress bar to reflect load
+progress and `event_occurred` can be connected to status bar to display
+event message
+"""
+
+
 import time
 
 from Qt import QtCore
@@ -6,7 +23,13 @@ from . import dagNode
 from .. import asciiBlock
 
 
-class BuildThread(QtCore.QObject):
+class Builder(QtCore.QObject):
+    """
+    Builder for creating Dag node tree
+    this should be the standard way of creating a tree of Dag nodes consists
+    with an ascii file, which we will need to use the asciiLoader.py to
+    generate ascii data blocks.
+    """
     progress_changed = QtCore.Signal(int)
     event_occurred = QtCore.Signal(str)
 

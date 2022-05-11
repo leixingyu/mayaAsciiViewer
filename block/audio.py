@@ -1,11 +1,23 @@
 """
-Example:
+Module used to parse audio information from ascii data blocks
 
+Scripting:
+```
+# get all audio paths of the maya file
+audios = Audio.from_blocks(blocks)
+for audio in audios:
+    print(audio.path)
+```
+
+Example:
+```
 createNode audio -n "happy_frog";
     rename -uid "4D97ED00-45A7-3DF0-4531-63ACF0545B24";
     setAttr ".ef" 2188.9502562925172;
     setAttr ".se" 2188.9502562925172;
     setAttr ".f" -type "string" "C:/Users/Lei/bgm/happy-frog.wav";
+```
+
 """
 
 import re
@@ -27,7 +39,14 @@ AudioBase = namedtuple('AudioBase',
 
 class Audio(AudioBase):
     @classmethod
-    def blocks(cls, blocks):
+    def from_blocks(cls, blocks):
+        """
+        Create audio data objects from ascii data blocks
+
+        :param blocks: list of AsciiBlock.
+                       normally generated from 'asciiLoader.py'
+        :return: list of Audio. audio data objects containing info
+        """
         audios = list()
 
         for block in blocks:

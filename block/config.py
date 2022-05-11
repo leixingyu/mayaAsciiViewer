@@ -1,10 +1,21 @@
 """
-Example:
+Module used to parse scene configuration from ascii data blocks
 
+Scripting:
+```
+# maya file min and max animation playback slider
+config = Config.from_blocks(blocks)
+print(config.min, config.max)
+```
+
+Example:
+```
 createNode script -n "sceneConfigurationScriptNode";
     rename -uid "ABFFC671-4DDD-54FB-0647-B594FEE16B08";
     setAttr ".b" -type "string" "playbackOptions -min 258 -max 317 -ast 1 -aet 2160 ";
     setAttr ".st" 6;
+```
+
 """
 
 import re
@@ -19,6 +30,13 @@ ConfigBase = namedtuple('ConfigBase', ['min', 'max', 'start', 'end'])
 class Config(ConfigBase):
     @classmethod
     def from_blocks(cls, blocks):
+        """
+        Create scene configuration data object from ascii data blocks
+
+        :param blocks: list of AsciiBlock.
+                       normally generated from 'asciiLoader.py'
+        :return: Config. scene configuration object
+        """
         for block in blocks:
             if not isinstance(block, asciiBlock.NodeBlock):
                 continue

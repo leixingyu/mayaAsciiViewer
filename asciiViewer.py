@@ -1,3 +1,7 @@
+"""
+Module for evoking the main GUI
+"""
+
 import os
 import sys
 
@@ -18,8 +22,13 @@ PROJECT_DIR = os.path.expandvars("%USERPROFILE%\\Desktop")
 
 
 class DockChart(QtWidgets.QDockWidget):
-
+    """
+    Class for creating dockable pie chart widget
+    """
     def __init__(self, parent):
+        """
+        Initialization
+        """
         super(DockChart, self).__init__(parent)
         self.__parent = parent
 
@@ -32,9 +41,24 @@ class DockChart(QtWidgets.QDockWidget):
         self.dock()
 
     def dock(self, position=QtCore.Qt.RightDockWidgetArea):
+        """
+        Dock the current widget to parent
+
+        :param position: Qt.DockWidgetArea. target dock position
+        """
         self.__parent.addDockWidget(position, self)
 
-    def reset(self):
+    def clear(self):
+        """
+        Clear all existing data in the widget
+        """
+        self.restore()
+        self.__chart.clear()
+
+    def restore(self):
+        """
+        Restore the widget to its default position
+        """
         if self.isFloating():
             self.setFloating(False)
         if not self.isVisible():
@@ -42,20 +66,30 @@ class DockChart(QtWidgets.QDockWidget):
         self.dock()
 
     def add_slice(self, name, value, color):
-        self.__chart.add_slice(name, value, color)
+        """
+        Add a data/slice to the pie chart
 
-    def clear(self):
-        self.reset()
-        self.__chart.clear()
+        :param name: str. name of the slice
+        :param value: int. value of the slice
+        :param color: QColor. color of the slice
+        """
+        self.__chart.add_slice(name, value, color)
 
 
 class DockTable(QtWidgets.QDockWidget):
+    """
+    Class for creating dockable table widget
+    """
     def __init__(self, cls, parent):
+        """
+        Initialization
+
+        :param cls: namedtuple. data class to be presented in the table
+        """
         super(DockTable, self).__init__(parent)
         self.setWindowTitle(cls.__name__)
 
         self.__parent = parent
-
         self.__args = cls._fields
         self.__table = table.SmartTable()
         self.__table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
@@ -68,9 +102,24 @@ class DockTable(QtWidgets.QDockWidget):
         self.dock()
 
     def dock(self, position=QtCore.Qt.LeftDockWidgetArea):
+        """
+        Dock the current widget to parent
+
+        :param position: Qt.DockWidgetArea. target dock position
+        """
         self.__parent.addDockWidget(position, self)
 
-    def reset(self):
+    def clear(self):
+        """
+        Clear all existing data in the widget
+        """
+        self.restore()
+        self.__table.setRowCount(0)
+
+    def restore(self):
+        """
+        Restore the widget to its default position
+        """
         if self.isFloating():
             self.setFloating(False)
         if not self.isVisible():
@@ -78,6 +127,11 @@ class DockTable(QtWidgets.QDockWidget):
         self.dock()
 
     def add_entry(self, values):
+        """
+        Add an entry to the table
+
+        :param values: list. data entries corresponding to each header
+        """
         self.__table.insertRow(self.__table.rowCount())
         for i, arg in enumerate(self.__args):
             self.__table.setItem(
@@ -86,14 +140,15 @@ class DockTable(QtWidgets.QDockWidget):
                 QtWidgets.QTableWidgetItem(str(values[i]))
             )
 
-    def clear(self):
-        self.reset()
-        self.__table.setRowCount(0)
-
 
 class AsciiViewer(QtWidgets.QMainWindow):
-
+    """
+    Create the ascii viewer main application window
+    """
     def __init__(self):
+        """
+        Initialization
+        """
         super(AsciiViewer, self).__init__()
         _loadUi(UI_PATH, self)
         self.resize(1500, 800)
@@ -119,12 +174,16 @@ class AsciiViewer(QtWidgets.QMainWindow):
         self.ui_progress.setVisible(False)
         self.statusBar().addPermanentWidget(self.ui_progress)
 
+        # connect signals
         self.ui_open_action.triggered.connect(self.load)
         self.ui_clear_action.triggered.connect(self.clear)
-        self.ui_reset_action.triggered.connect(self.reset)
+        self.ui_reset_action.triggered.connect(self.restore)
 
     def clear(self):
-        # the order matters
+        """
+        Clear all existing data in all widgets
+        """
+        # order matters for docking position
         for widget in [
             self.ui_size_chart,
             self.ui_type_chart,
@@ -138,7 +197,11 @@ class AsciiViewer(QtWidgets.QMainWindow):
 
         self.ui_dag_widget.clear()
 
-    def reset(self):
+    def restore(self):
+        """
+        Restore all widgets to its default position
+        """
+        # order matters for docking position
         for widget in [
             self.ui_size_chart,
             self.ui_type_chart,
@@ -148,9 +211,13 @@ class AsciiViewer(QtWidgets.QMainWindow):
             self.ui_ref_table,
             self.ui_audio_table,
         ]:
-            widget.reset()
+            widget.restore()
 
     def load(self):
+        """
+        Load a maya ascii file for viewing, populates all widgets with file
+        data.
+        """
         from guiUtil import prompt
 
         mfile = prompt.get_path_import(default_path=PROJECT_DIR, typ='*.ma')
@@ -168,18 +235,30 @@ class AsciiViewer(QtWidgets.QMainWindow):
         self.update()
 
     def update(self):
+        """
+        Update all widgets to reflect the latest ascii blocks data
+        """
         self.__update_dag_view()
         self.__update_size_chart()
-        self.__update_info_table()
+        self.__update_tables()
 
     def __get_blocks(self, mfile):
-        loader = asciiLoader.LoadThread()
+        """
+        Update the latest ascii blocks data
+
+        :param mfile: str. file path to a maya ascii file
+        """
+        loader = asciiLoader.Loader()
         loader.progress_changed.connect(lambda value: update_progress(self.ui_progress, value))
         loader.event_occurred.connect(lambda msg: update_message(self.statusBar(), msg))
         self.__blocks = loader.load(mfile)
 
     def __update_dag_view(self):
-        buider = dagBuilder.BuildThread()
+        """
+        Update the Dag view and the Dag type chart
+        to reflect the latest ascii blocks data
+        """
+        buider = dagBuilder.Builder()
         buider.progress_changed.connect(lambda value: update_progress(self.ui_progress, value))
         buider.event_occurred.connect(lambda msg: update_message(self.statusBar(), msg))
         root = buider.build(self.__blocks)
@@ -197,6 +276,9 @@ class AsciiViewer(QtWidgets.QMainWindow):
         self.ui_dag_widget.update()
 
     def __update_size_chart(self):
+        """
+        Update the size chart to reflect the latest ascii blocks data
+        """
         # simple chart
         results = asciiBlock.get_distribution(self.__blocks)
         for i in range(len(results)):
@@ -206,7 +288,10 @@ class AsciiViewer(QtWidgets.QMainWindow):
                 palette.PRIM_3[i]
             )
 
-    def __update_info_table(self):
+    def __update_tables(self):
+        """
+        Update the tables to reflect the latest ascii blocks data
+        """
         infos = info.Info.from_blocks(self.__blocks)
         for entry in infos:
             self.ui_info_table.add_entry(entry)
@@ -222,12 +307,18 @@ class AsciiViewer(QtWidgets.QMainWindow):
         for entry in refs:
             self.ui_ref_table.add_entry(entry)
 
-        audios = audio.Audio.blocks(self.__blocks)
+        audios = audio.Audio.from_blocks(self.__blocks)
         for entry in audios:
             self.ui_audio_table.add_entry(entry)
 
 
 def update_progress(progress_bar, value):
+    """
+    Update a progress bar widget with given value
+
+    :param progress_bar: QtWidget.QProgressBar. progress to update
+    :param value: int. progress value
+    """
     progress_bar.setValue(value)
 
     if value >= 100:
@@ -237,10 +328,19 @@ def update_progress(progress_bar, value):
 
 
 def update_message(status_bar, msg):
+    """
+    Display a given string in status bar widget
+
+    :param status_bar: QtWidget.QStatusBar. status bar to update
+    :param msg: str. message to display
+    """
     status_bar.showMessage(msg, 2000)
 
 
 def show():
+    """
+    Launch the main application with custom icon and style sheet
+    """
     from qt_material import apply_stylesheet
     global window
 
