@@ -8,7 +8,6 @@ import sys
 from Qt import QtWidgets, QtCore, QtGui
 from Qt import _loadUi
 from guiUtil.template import pieChart, table
-from pipelineUtil.data import palette
 
 from mayaAsciiParser import asciiBlock, asciiLoader
 from mayaAsciiParser.block import audio, config, reference, requirement, info
@@ -19,6 +18,25 @@ MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
 UI_PATH = os.path.join(MODULE_PATH, 'asciiViewer.ui')
 ICON_PATH = os.path.join(MODULE_PATH, 'icon.png')
 PROJECT_DIR = os.path.expandvars("%USERPROFILE%\\Desktop")
+
+# color palette
+TABLEAU_NEW_10 = [
+    '#4e79a7',
+    '#59a14f',
+    '#9c755f',
+    '#f28e2b',
+    '#edc948',
+    '#bab0ac',
+    '#e15759',
+    '#b07aa1',
+    '#76b7b2',
+    '#ff9da7',
+]
+PRIM_3 = [
+    '#82d3e5',
+    '#fd635c',
+    '#feb543',
+]
 
 
 class DockChart(QtWidgets.QDockWidget):
@@ -269,7 +287,7 @@ class AsciiViewer(QtWidgets.QMainWindow):
             self.ui_type_chart.add_slice(
                 results[i][0],
                 results[i][1],
-                palette.TABLEAU_NEW_10[i]
+                TABLEAU_NEW_10[i]
             )
 
         self.ui_dag_widget.set_root(root)
@@ -285,7 +303,7 @@ class AsciiViewer(QtWidgets.QMainWindow):
             self.ui_size_chart.add_slice(
                 results[i][0],
                 results[i][1],
-                palette.PRIM_3[i]
+                PRIM_3[i]
             )
 
     def __update_tables(self):
@@ -349,7 +367,6 @@ def show():
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
 
     extra = {
-        'font_size': '10px',
         'density_scale': '-1',
     }
 

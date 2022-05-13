@@ -19,6 +19,7 @@ class DagView(QtWidgets.QTreeView):
 
         self.setSortingEnabled(True)
         self.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
 
         self.__model = dagModel.DagModel('')
         self.proxy_model = dagModel.DagProxyModel(self)
@@ -36,7 +37,6 @@ class DagView(QtWidgets.QTreeView):
         self.proxy_model.rowsInserted.connect(self.__make_children_persistent)
 
     def clear(self):
-        # FIXME: this doesn't work correctly
         if self.model().sourceModel():
             self.model().sourceModel().clear()
 

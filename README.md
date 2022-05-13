@@ -1,58 +1,110 @@
-# Maya Ascii Viewer (Work In Progress!)
+# Maya Ascii Viewer
 
 Maya Ascii file (.ma) standalone viewer, acquire essential file information
 and visualize data without needing to wait for Maya to open.
 
-![preview](https://imgur.com/j6dcujm.png)
+![preview](https://i.imgur.com/HFitkdR.png)
 
 ## Getting Started
 
-1. Download and unzip the whole package
+Download the executable directly [here](), built with [Pyinstaller](https://pyinstaller.org/en/stable/)
 
+OR.
 
-2. Launch the python file
+Download the source code and install all the [dependencies](#dependencies)
 
-    ```commandline
-    python example.py
-    ```
-   
+```
+python asciiViewer.py
+```
+
+### Scripting
+
+Basic parsing
+
+```python
+mfile = r'C:/example.ma'
+
+loader = Loader()
+blocks = loader.load(mfile)
+```
+
+```python
+>> len(blocks)  # number of top level maya objects parsed
+--------------
+4983  
+```
+
+```python
+>> blocks[-1].index  # the last ascii block is at line 52223
+--------------
+52223 
+
+>> blocks[-1].desc  # short description of the block
+--------------
+createNode animCurveUA -n "Right_MidFing_02_Pose_rotateY";
+
+>> blocks[-1].asc.read_detail(52223)  # full description
+--------------
+createNode animCurveUA -n "Right_MidFing_02_Pose_rotateY";
+	rename -uid "693A6E85-4839-D09B-8886-7096150EC40C";
+	setAttr ".tan" 18;
+	setAttr ".wgt" no;
+	setAttr -s 3 ".ktv[0:2]"  -5 0.018 0 0 10 2.926;
+```
+
+Detail parsing:
+```python
+>> blocks[-2].__class__  # type of the block, a.k.a the mel command type
+--------------
+<class 'asciiBlock.ConnectionBlock'>
+
+>> blocks[-2].source  # source attribute of the connection object
+--------------
+ikRPsolver.msg
+```
+
+```python
+>> audios = Audio.from_blocks(blocks)  # parse audio node
+>> audios[0].path
+--------------
+C:/bgm/happy-frog.wav
+
+>> audios[0].offset
+--------------
+0
+```
+
+```python
+>> refs = Reference.from_blocks(blocks)  # parse reference node
+>> refs[0].path
+--------------
+C:/test.ma
+
+>> refs[0].refnode
+--------------
+testRN
+```
+
 ## Dependencies
 
 - [Qt](https://github.com/mottosso/Qt.py): a module that supports different
-python qt bindings (Only needed if you need UI support functionalities)
+python qt bindings
     ```
     pip install Qt.py
     ```
 
-Already packaged dependencies with locked version of the following,
-but you will need to clone using `git clone --recursive`
+- [PyQtChart](https://pypi.org/project/PyQtChart/): an add-on module for Qt
+for creating charts (Need to check compatibility with your current Qt install,
+most likely you'll want to use Python 3, since PyQtChart is added after Qt 5.7)
+    ```
+    pip install PyQtChart
+    ```
 
-- [pipelineUtil](https://github.com/leixingyu/pipelineUtil)
+- [qt-material](https://github.com/UN-GCPDS/qt-material): a
+material inspired stylesheet for PySide2, PySide6, PyQt5 and PyQt6
+  ```
+  pip install qt-material
+  ```
 
-## Speed Tests
-
-[caching ascii data | creating dag nodes | total time]
-
-### model-village-user-guide.ma 
-
-> [4.39s | 6.87s | 11.26s]
-
-- 9,134,983 lines
-- 392,495,914 bytes
-- 13,886 nodes
-
-### PhoenixFD_BeachWaves.ma 
-
-> [1.71s | <0.01s | 1.71s]
-
-- 3,296,117 lines
-- 209,392,366 bytes
-- 115 nodes
-
-### Kayla 2017 Rig.ma
-
-> [1.32s | 0.07s | 1.39s]
-
-- 2,128,357 lines
-- 114,675,946 bytes
-- 7,025 nodes
+- [guiUtil](https://github.com/leixingyu/guiUtil):
+my own gui library for some handy qt templates.

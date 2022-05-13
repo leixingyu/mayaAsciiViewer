@@ -13,10 +13,10 @@ event message
 """
 
 import math
+import os
 import time
 
 from Qt import QtCore
-from pipelineUtil.fileSystem import fp
 
 from . import asciiBlock
 
@@ -170,7 +170,7 @@ class Loader(QtCore.QObject):
         return blocks
 
 
-class Ascii(fp.File):
+class Ascii(object):
     """
     Class for representing Maya Ascii file
     """
@@ -180,24 +180,49 @@ class Ascii(fp.File):
 
         :param path: str. path to maya ascii file
         """
-        super(Ascii, self).__init__(path)
+        if not os.path.isfile(path):
+            raise NameError('file % cannot be found', path)
+
+        self.__path = path
+        self.__name = os.path.basename(self.__path)
+        self.__ext = os.path.splitext(self.__name)[-1]
+        self.__base = os.path.splitext(self.__name)[0]
+        self.__dir = os.path.dirname(self.__path)
+
         if self.ext != '.ma':
-            raise TypeError('File {} is not an Maya Ascii type'.format(self.path))
+            raise TypeError('File {} is not an Maya Ascii type'.format(self.__path))
 
         self._lineCount = 0
 
-    def update(self):
-        """
-        Override. update file related attribute
-        """
-        super(Ascii, self).update()
-        self.update_line()
+    @property
+    def base(self):
+        return self.__base
+
+    @property
+    def name(self):
+        return self.__name
+
+    @property
+    def ext(self):
+        return self.__ext
+
+    @property
+    def dir(self):
+        return self.__dir
+
+    @property
+    def path(self):
+        return self.__path
+
+    @property
+    def size(self):
+        return int(os.path.getsize(self.__path))
 
     def update_line(self):
         """
         Update ascii file line count
         """
-        with open(self._path) as f:
+        with open(self.__path) as f:
             for count, _line in enumerate(f):
                 pass
             self._lineCount = count
@@ -222,7 +247,7 @@ class Ascii(fp.File):
         :param num: int. line number
         :return: str. full description of the ascii block
         """
-        with open(self._path) as f:
+        with open(self.__path) as f:
             line = f.readline()
             count = 1
             is_start = False
