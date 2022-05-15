@@ -7,7 +7,7 @@ and visualize data without needing to wait for Maya to open.
 
 ## Getting Started
 
-Download the executable directly [here](), built with [Pyinstaller](https://pyinstaller.org/en/stable/)
+Download the executable directly [here](https://github.com/leixingyu/mayaAsciiViewer/releases/tag/v1.0.0), built with [Pyinstaller](https://pyinstaller.org/en/stable/)
 
 OR.
 
@@ -100,11 +100,11 @@ most likely you'll want to use Python 3, since PyQtChart is added after Qt 5.7)
     pip install PyQtChart
     ```
 
-- [qt-material](https://github.com/UN-GCPDS/qt-material): a
-material inspired stylesheet for PySide2, PySide6, PyQt5 and PyQt6
+- [qt-material **[Optional]**](https://github.com/UN-GCPDS/qt-material): a
+material inspired stylesheet for PySide2, PySide6, PyQt5 and PyQt6 
   ```
   pip install qt-material
   ```
 
 - [guiUtil](https://github.com/leixingyu/guiUtil):
-my own gui library for some handy qt templates.
+my gui library for some handy qt templates.

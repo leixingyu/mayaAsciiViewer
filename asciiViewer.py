@@ -188,6 +188,17 @@ class AsciiViewer(QtWidgets.QMainWindow):
         self.ui_ref_table = DockTable(reference.Reference, self)
         self.ui_audio_table = DockTable(audio.Audio, self)
 
+        # store the order
+        self.ui_dockables = [
+            self.ui_size_chart,
+            self.ui_type_chart,
+            self.ui_info_table,
+            self.ui_req_table,
+            self.ui_config_table,
+            self.ui_ref_table,
+            self.ui_audio_table,
+        ]
+
         self.ui_progress = QtWidgets.QProgressBar()
         self.ui_progress.setVisible(False)
         self.statusBar().addPermanentWidget(self.ui_progress)
@@ -202,15 +213,7 @@ class AsciiViewer(QtWidgets.QMainWindow):
         Clear all existing data in all widgets
         """
         # order matters for docking position
-        for widget in [
-            self.ui_size_chart,
-            self.ui_type_chart,
-            self.ui_info_table,
-            self.ui_req_table,
-            self.ui_config_table,
-            self.ui_ref_table,
-            self.ui_audio_table,
-        ]:
+        for widget in self.ui_dockables:
             widget.clear()
 
         self.ui_dag_widget.clear()
@@ -220,15 +223,7 @@ class AsciiViewer(QtWidgets.QMainWindow):
         Restore all widgets to its default position
         """
         # order matters for docking position
-        for widget in [
-            self.ui_size_chart,
-            self.ui_type_chart,
-            self.ui_info_table,
-            self.ui_req_table,
-            self.ui_config_table,
-            self.ui_ref_table,
-            self.ui_audio_table,
-        ]:
+        for widget in self.ui_dockables:
             widget.restore()
 
     def load(self):
@@ -359,20 +354,24 @@ def show():
     """
     Launch the main application with custom icon and style sheet
     """
-    from qt_material import apply_stylesheet
+    import ctypes
+
     global window
 
-    import ctypes
     app_id = 'xingyulei.asciiviewer.1-0-0'
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
 
-    extra = {
-        'density_scale': '-1',
-    }
-
     app = QtWidgets.QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon(ICON_PATH))
-    apply_stylesheet(app, theme='light_blue.xml', extra=extra)
+
+    try:
+        from qt_material import apply_stylesheet
+        extra = {
+            'density_scale': '-1',
+        }
+        apply_stylesheet(app, theme='light_blue.xml', extra=extra)
+    except ImportError:
+        pass
 
     window = AsciiViewer()
     window.show()
