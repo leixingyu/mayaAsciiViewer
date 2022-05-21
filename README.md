@@ -7,7 +7,7 @@ and visualize data without needing to wait for Maya to open.
 
 ## Getting Started
 
-Download the executable directly [here](https://github.com/leixingyu/mayaAsciiViewer/releases/tag/v1.0.0), built with [Pyinstaller](https://pyinstaller.org/en/stable/)
+Download the executable directly [here](https://github.com/leixingyu/mayaAsciiViewer/releases), built with [Pyinstaller](https://pyinstaller.org/en/stable/)
 
 OR.
 

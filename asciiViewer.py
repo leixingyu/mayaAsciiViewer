@@ -9,9 +9,9 @@ from Qt import QtWidgets, QtCore, QtGui
 from Qt import _loadUi
 from guiUtil.template import pieChart, table
 
-from mayaAsciiParser import asciiBlock, asciiLoader
-from mayaAsciiParser.block import audio, config, reference, requirement, info
-from mayaAsciiParser.dag import dagBuilder, dagView, dagNode
+from mayaAsciiViewer import asciiBlock, asciiLoader
+from mayaAsciiViewer.block import audio, config, reference, requirement, info
+from mayaAsciiViewer.dag import dagBuilder, dagView, dagNode
 
 
 MODULE_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -338,6 +338,7 @@ def update_progress(progress_bar, value):
         progress_bar.setVisible(False)
     elif progress_bar.isHidden():
         progress_bar.setVisible(True)
+    QtCore.QCoreApplication.processEvents()
 
 
 def update_message(status_bar, msg):
@@ -348,6 +349,7 @@ def update_message(status_bar, msg):
     :param msg: str. message to display
     """
     status_bar.showMessage(msg, 2000)
+    QtCore.QCoreApplication.processEvents()
 
 
 def show():
