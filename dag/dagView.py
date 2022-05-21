@@ -45,6 +45,7 @@ class DagView(QtWidgets.QTreeView):
         self.__make_children_persistent()
 
     def __make_children_persistent(self, index=QtCore.QModelIndex()):
+        # TODO: only make persistent on items visible on screen
         for row in range(0, self.proxy_model.rowCount(index)):
             # top level
             if index == QtCore.QModelIndex():
