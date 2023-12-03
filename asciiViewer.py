@@ -7,7 +7,9 @@ import sys
 
 from Qt import QtWidgets, QtCore, QtGui
 from Qt import _loadUi
-from guiUtil.template import pieChart, table
+
+from guiUtil.custom import smartTableWidget
+from guiUtil.template import pieChart
 
 from mayaAsciiViewer import asciiBlock, asciiLoader
 from mayaAsciiViewer.block import audio, config, reference, requirement, info
@@ -109,7 +111,7 @@ class DockTable(QtWidgets.QDockWidget):
 
         self.__parent = parent
         self.__args = cls._fields
-        self.__table = table.SmartTable()
+        self.__table = smartTableWidget.SmartTableWidget()
         self.__table.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.__table.setColumnCount(len(self.__args))
         self.__table.setHorizontalHeaderLabels(
